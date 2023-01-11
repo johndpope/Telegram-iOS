@@ -1,7 +1,7 @@
 #import <MtProtoKit/MTNetworkUsageManager.h>
 
 #include <sys/mman.h>
-#import <os/lock.h>
+#import <libkern/OSAtomic.h>
 
 #import <MtProtoKit/MTNetworkUsageCalculationInfo.h>
 #import <MtProtoKit/MTSignal.h>

@@ -2,7 +2,6 @@
 
 #import <MtProtoKit/MTRpcError.h>
 
-#import <os/lock.h>
 #import <libkern/OSAtomic.h>
 
 @interface MTRequestInternalId : NSObject <NSCopying>
@@ -20,10 +19,7 @@
     if (self != nil)
     {
         static int32_t nextValue = 1;
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
         _value = OSAtomicIncrement32(&nextValue);
-#pragma clang diagnostic pop
     }
     return self;
 }

@@ -22,7 +22,7 @@
 
 #import <MtProtoKit/MTApiEnvironment.h>
 
-#import <os/lock.h>
+#import <libkern/OSAtomic.h>
 
 #import "MTDiscoverConnectionSignals.h"
 
@@ -30,6 +30,7 @@
 
 #import <MtProtoKit/MTDisposable.h>
 #import <MtProtoKit/MTSignal.h>
+#import <os/lock.h>
 
 @implementation MTContextBlockChangeListener
 
@@ -176,7 +177,9 @@ static MTDatacenterAuthInfoMapKeyStruct parseAuthInfoMapKeyInteger(NSNumber *key
     
     NSMutableDictionary *_periodicTasksTimerByDatacenterId;
     
-    os_unfair_lock _passwordEntryRequiredLock;
+     os_unfair_lock _passwordEntryRequiredLock;
+    
+//    volatile OSSpinLock _passwordEntryRequiredLock;
     NSMutableDictionary *_passwordRequiredByDatacenterId;
     
     NSMutableDictionary *_transportSchemeDisposableByDatacenterId;
@@ -733,7 +736,7 @@ static void copyKeychainKey(NSString * _Nonnull group, NSString * _Nonnull key, 
             
             for (id<MTContextChangeListener> listener in currentListeners) {
                 if ([listener respondsToSelector:@selector(contextDatacenterTransportSchemesUpdated:datacenterId:shouldReset:)])
-                    [listener contextDatacenterTransportSchemesUpdated:self datacenterId:datacenterId shouldReset:false];
+                    [listener contextDatacenterTransportSchemesUpdated:self datacenterId:datacenterId shouldReset:true];
             }
         }
     }];

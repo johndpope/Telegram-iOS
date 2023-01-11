@@ -3,7 +3,7 @@
 #ifndef MtProtoKit_MTInternalId_h
 #define MtProtoKit_MTInternalId_h
 
-#import <os/lock.h>
+#import <libkern/OSAtomic.h>
 
 #define MTInternalId(name) MT##name##InternalId
 

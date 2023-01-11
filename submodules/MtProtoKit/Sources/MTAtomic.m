@@ -1,10 +1,12 @@
 #import <MtProtoKit/MTAtomic.h>
 
+#import <libkern/OSAtomic.h>
 #import <os/lock.h>
-
 @interface MTAtomic ()
 {
+    // volatile OSSpinLock _lock;
     os_unfair_lock _lock;
+
     id _value;
 }
 

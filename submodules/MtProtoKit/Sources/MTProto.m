@@ -2575,11 +2575,9 @@ static bool isDataEqualToDataConstTime(NSData *data1, NSData *data2) {
                 resolvedShouldReset = true;
             }
             
-            if ((_mtState & MTProtoStateAwaitingDatacenterAuthorization) == 0 && (_mtState & MTProtoStatePaused) == 0) {
-                if (resolvedShouldReset) {
-                    [self resetTransport];
-                    [self requestTransportTransaction];
-                }
+            if (resolvedShouldReset) {
+                [self resetTransport];
+                [self requestTransportTransaction];
             }
         }
     }];

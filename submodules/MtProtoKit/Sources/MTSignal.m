@@ -1,10 +1,11 @@
 #import <MtProtoKit/MTSignal.h>
 
-#import <os/lock.h>
+#import <libkern/OSAtomic.h>
 #import <MtProtoKit/MTTimer.h>
 #import <MtProtoKit/MTQueue.h>
 #import <MtProtoKit/MTAtomic.h>
 #import <MtProtoKit/MTBag.h>
+#import <os/lock.h>
 
 @interface MTSubscriberDisposable : NSObject <MTDisposable>
 {
@@ -55,7 +56,7 @@
 
 @interface MTSignalQueueState : NSObject <MTDisposable>
 {
-    os_unfair_lock _lock;
+  os_unfair_lock _lock;
     bool _executingSignal;
     bool _terminated;
     

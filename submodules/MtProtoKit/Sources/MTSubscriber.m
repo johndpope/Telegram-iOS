@@ -1,6 +1,6 @@
 #import <MtProtoKit/MTSubscriber.h>
-
 #import <os/lock.h>
+#import <libkern/OSAtomic.h>
 
 @interface MTSubscriberBlocks : NSObject {
 @public
@@ -27,7 +27,6 @@
 
 @interface MTSubscriber ()
 {
-@protected
     os_unfair_lock _lock;
     bool _terminated;
     id<MTDisposable> _disposable;
