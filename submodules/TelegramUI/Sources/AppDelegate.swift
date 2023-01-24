@@ -335,7 +335,7 @@ private final class AnimationSupportContext {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         precondition(!testIsLaunched)
         testIsLaunched = true
-        
+        UserDefaults.standard.setValue(false, forKey: "UIViewShowAlignmentRects")
         let _ = voipTokenPromise.get().start(next: { token in
             self.deviceToken.set(.single(token))
         })
@@ -598,7 +598,7 @@ private final class AnimationSupportContext {
         GlobalExperimentalSettings.enableFeed = false
         
         self.window?.makeKeyAndVisible()
-        
+       
         self.hasActiveAudioSession.set(MediaManagerImpl.globalAudioSession.isActive())
         
         let applicationBindings = TelegramApplicationBindings(isMainApp: true, appBundleId: baseAppBundleId, appBuildType: buildConfig.isAppStoreBuild ? .public : .internal, containerPath: appGroupUrl.path, appSpecificScheme: buildConfig.appSpecificUrlScheme, openUrl: { url in
@@ -729,20 +729,21 @@ private final class AnimationSupportContext {
                 completion(false)
             }
         }, siriAuthorization: {
-            if #available(iOS 10, *) {
-                switch INPreferences.siriAuthorizationStatus() {
-                    case .authorized:
-                        return .allowed
-                    case .denied, .restricted:
-                        return .denied
-                    case .notDetermined:
-                        return .notDetermined
-                    @unknown default:
-                        return .notDetermined
-                }
-            } else {
-                return .denied
-            }
+            return .denied
+//            if #available(iOS 10, *) {
+////                switch INPreferences.siriAuthorizationStatus() {
+////                    case .authorized:
+////                        return .allowed
+////                    case .denied, .restricted:
+////                        return .denied
+////                    case .notDetermined:
+////                        return .notDetermined
+////                    @unknown default:
+////                        return .notDetermined
+////                }
+//            } else {
+//                return .denied
+//            }
         }, getWindowHost: {
             return self.nativeWindow
         }, presentNativeController: { controller in
