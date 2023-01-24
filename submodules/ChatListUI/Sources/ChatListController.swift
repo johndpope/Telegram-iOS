@@ -43,6 +43,9 @@ import PeerInfoUI
 import ComponentDisplayAdapters
 import ChatListHeaderComponent
 import ChatListTitleView
+import GalleryUI
+//import TelegramUI
+
 
 private func fixListNodeScrolling(_ listNode: ListView, searchNode: NavigationBarSearchContentNode) -> Bool {
     if listNode.scroller.isDragging {
@@ -981,44 +984,71 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
                             }
                             
                             let chatLocation: NavigateToChatControllerParams.Location
-                            chatLocation = .peer(peer)
                             
-                            strongSelf.context.sharedContext.navigateToChatController(NavigateToChatControllerParams(navigationController: navigationController, context: strongSelf.context, chatLocation: chatLocation, activateInput: (activateInput && !peer.isDeleted) ? .text : nil, scrollToEndIfExists: scrollToEndIfExists, animated: !scrollToEndIfExists, options: navigationAnimationOptions, parentGroupId: groupId._asGroup(), chatListFilter: strongSelf.chatListDisplayNode.mainContainerNode.currentItemNode.chatListFilter?.id, completion: { [weak self] controller in
-                                self?.chatListDisplayNode.mainContainerNode.currentItemNode.clearHighlightAnimated(true)
-                                if let promoInfo = promoInfo {
-                                    switch promoInfo {
-                                    case .proxy:
-                                        let _ = (ApplicationSpecificNotice.getProxyAdsAcknowledgment(accountManager: strongSelf.context.sharedContext.accountManager)
-                                                 |> deliverOnMainQueue).start(next: { value in
-                                            guard let strongSelf = self else {
-                                                return
-                                            }
-                                            if !value {
-                                                controller.displayPromoAnnouncement(text: strongSelf.presentationData.strings.DialogList_AdNoticeAlert)
-                                                let _ = ApplicationSpecificNotice.setProxyAdsAcknowledgment(accountManager: strongSelf.context.sharedContext.accountManager).start()
-                                            }
-                                        })
-                                    case let .psa(type, _):
-                                        let _ = (ApplicationSpecificNotice.getPsaAcknowledgment(accountManager: strongSelf.context.sharedContext.accountManager, peerId: peer.id)
-                                                 |> deliverOnMainQueue).start(next: { value in
-                                            guard let strongSelf = self else {
-                                                return
-                                            }
-                                            if !value {
-                                                var text = strongSelf.presentationData.strings.ChatList_GenericPsaAlert
-                                                let key = "ChatList.PsaAlert.\(type)"
-                                                if let string = strongSelf.presentationData.strings.primaryComponent.dict[key] {
-                                                    text = string
-                                                } else if let string = strongSelf.presentationData.strings.secondaryComponent?.dict[key] {
-                                                    text = string
-                                                }
-                                                
-                                                controller.displayPromoAnnouncement(text: text)
-                                                let _ = ApplicationSpecificNotice.setPsaAcknowledgment(accountManager: strongSelf.context.sharedContext.accountManager, peerId: peer.id).start()
-                                            }
-                                        })
-                                    }
+                         
+//                            et accessHash: TelegramPeerAccessHash?
+                            let title = "3D to 5D Consciousness"
+//
+                          
+//                            let title: String
+//                            let photo: [TelegramMediaImageRepresentation]
+//                            let participantCount: Int
+                            let role: TelegramGroupRole = .member
+//                            let membership: TelegramGroupMembership
+//                            let flags: TelegramGroupFlags
+//                            let defaultBannedRights: TelegramChatBannedRights?
+                            let migrationReference: TelegramGroupToChannelMigrationReference? = nil
+                            let creationDate: Int32 = 0
+                            let version: Int = 1
+                            
+                            // JP - hardcode a group here - they all go to same group
+                            let peerId = PeerId(namespace: Namespaces.Peer.CloudChannel, id: PeerId.Id._internalFromInt64Value(1375690723)) // 1375690723
+//                            let accessHashValue = TelegramPeerAccessHash.personal(-7548546520919379825)
+
+                            let myChannel =    TelegramGroup(id: peerId, title: title, photo: [], participantCount: Int(0), role: role, membership:TelegramGroupMembership.Member, flags: []   , defaultBannedRights: nil, migrationReference: migrationReference, creationDate: creationDate, version: Int(version))
+//                             chatLocation = .peer(peer)
+         
+                            chatLocation = .peer(EnginePeer(myChannel)) //  🪶  peer - channel : <TelegramChannel: 0x600003dc2490>
+                            
+                            
+                            //  parentGroupId: groupId._asGroup() - this is the group id TelegramCore.EngineChatList.Group.root -> Postbox.PeerGroupId.root
+                            strongSelf.context.sharedContext.navigateToChatController(NavigateToChatControllerParams(navigationController: navigationController, context: strongSelf.context, chatLocation: chatLocation, activateInput: (activateInput && !peer.isDeleted) ? .text : nil, scrollToEndIfExists: scrollToEndIfExists, animated: false, options: navigationAnimationOptions, parentGroupId: groupId._asGroup(), chatListFilter: strongSelf.chatListDisplayNode.mainContainerNode.currentItemNode.chatListFilter?.id, completion: { [weak self] chatController in
+                                
+//
+//                                if let (messageId, maybeTimecode) = chatController.scheduledScrollToMessageId {
+//                                    print("messageId:",messageId)
+//                                }
+
+                                
+                                if let strongSelf = self {
+                                    
+//                                    if let vc = chatController as? ChatControllerImpl{
+//                                        print("scrolledToMessageId:",vc.scrolledToMessageId) // TODO - get the message ID of whatever appears on screen.
+//
+//                                    }
+//
+//
+                                    
+                                    
+                                    // PRESENT GALLERY
+                                    
+                                    let message = Message(stableId: 0, stableVersion: 0, id: MessageId(peerId: PeerId(0), namespace: 0, id: 0), globallyUniqueId: nil, groupingKey: nil, groupInfo: nil, threadId: nil, timestamp: 0, flags: [], tags: [], globalTags: [], localTags: [], forwardInfo: nil, author: nil, text: "", attributes: [], media: [], peers: SimpleDictionary(), associatedMessages: SimpleDictionary(), associatedMessageIds: [], associatedMedia: [:], associatedThreadInfo: nil)
+
+                                    let source = GalleryControllerItemSource.standaloneMessage(message)
+                                    // TODO - change the source
+                                    let gallery = GalleryController(context: strongSelf.context, source: source, playbackRate: 1.00, replaceRootController: { controller, ready in
+    //                                    if let baseNavigationController = baseNavigationController {
+    //                                        baseNavigationController.replaceTopController(controller, animated: false, ready: ready)
+    //                                    }
+                                    }, baseNavigationController: navigationController)
+                                    
+                                    let level = PresentationSurfaceLevel(rawValue:0)
+                                    self?.window?.present(gallery, on: level, blockInteraction: true, completion: {})
+                                    
+                                    self?.chatListDisplayNode.mainContainerNode.currentItemNode.clearHighlightAnimated(true)
                                 }
+                               
+//
                             }))
                         }
                     }

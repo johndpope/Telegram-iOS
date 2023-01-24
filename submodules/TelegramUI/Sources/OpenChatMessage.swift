@@ -179,13 +179,14 @@ func openChatMessageImpl(_ params: OpenChatMessageParams) -> Bool {
                     gallery.centralItemUpdated = { messageId in
                         params.centralItemUpdated?(messageId)
                     }
-                    params.present(gallery, GalleryControllerPresentationArguments(transitionArguments: { messageId, media in
+                    let presArgs = GalleryControllerPresentationArguments(transitionArguments: { messageId, media in
                         let selectedTransitionNode = params.transitionNode(messageId, media)
                         if let selectedTransitionNode = selectedTransitionNode {
                             return GalleryTransitionArguments(transitionNode: selectedTransitionNode, addToTransitionSurface: params.addToTransitionSurface)
                         }
                         return nil
-                    }))
+                    })
+                    params.present(gallery,presArgs)
                 })
                 return true
             case let .secretGallery(gallery):

@@ -16,12 +16,14 @@ import DatePickerNode
 import DebugSettingsUI
 import TabBarUI
 import DrawingUI
+import GalleryUI
 
 public final class TelegramRootController: NavigationController {
     private let context: AccountContext
     
     public var rootTabController: TabBarController?
     
+    public var galleryController: GalleryController? // TODO - make this WEVGalleryPageNode
     public var contactsController: ContactsController?
     public var callListController: CallListController?
     public var chatListController: ChatListController?
@@ -103,6 +105,12 @@ public final class TelegramRootController: NavigationController {
         let callListController = CallListController(context: self.context, mode: .tab)
         
         var controllers: [ViewController] = []
+//        
+//        let galleryController = GalleryController(context: self.context)
+////        contactsController.switchToChatsController = {  [weak self] in
+////            self?.openChatsController(activateSearch: false)
+////        }
+//        controllers.append(galleryController)
         
         let contactsController = ContactsController(context: self.context)
         contactsController.switchToChatsController = {  [weak self] in

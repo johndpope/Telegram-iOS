@@ -1883,6 +1883,7 @@ final class ChatListSearchListPaneNode: ASDisplayNode, ChatListSearchPaneNode {
         }
         
         let loadMore = {
+            print("INFO: loadMore...")
             updateSearchContexts { previousMap in
                 var updatedMap = previousMap
                 var isSearching = false
