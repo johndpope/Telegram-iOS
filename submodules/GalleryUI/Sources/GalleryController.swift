@@ -545,6 +545,7 @@ public class GalleryController: ViewController, StandalonePresentableController,
                         if strongSelf.isViewLoaded {
                             var items: [GalleryItem] = []
                             var centralItemIndex: Int?
+                            // 🪶 here we're going over the entries - how to hack these.
                             for entry in strongSelf.entries {
                                 var isCentral = false
                                 if entry.message.stableId == strongSelf.centralEntryStableId {
