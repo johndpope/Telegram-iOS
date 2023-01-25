@@ -1020,6 +1020,10 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
                             let creationDate: Int32 = 0
                             let version: Int = 1
                             
+                            
+                            // I want the message id that corresponds to the chatcontroller latest one.
+//                            let message = strongSelf.context.account.postbox.mes 
+                            
                             // JP - hardcode a group here - they all go to Laura Aboli
                             let lauraAboliPeerId = PeerId.Id._internalFromInt64Value(1375690723)
                             let peerId = PeerId(namespace: Namespaces.Peer.CloudChannel, id:lauraAboliPeerId)  
@@ -1028,11 +1032,11 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
                             chatLocation = .peer(EnginePeer(myChannel)) //  🪶  peer - channel : <TelegramChannel: 0x600003dc2490>
 
                             let chatListFilterId = strongSelf.chatListDisplayNode.mainContainerNode.currentItemNode.chatListFilter?.id
-                            let extractedExpr: NavigateToChatControllerParams = NavigateToChatControllerParams(navigationController: navigationController, context: strongSelf.context, chatLocation: chatLocation, activateInput: (activateInput && !peer.isDeleted) ? .text : nil, scrollToEndIfExists: scrollToEndIfExists, animated: false, options: navigationAnimationOptions, parentGroupId: groupId._asGroup(), chatListFilter: chatListFilterId, completion: {_ in
+                            let extractedExpr: NavigateToChatControllerParams = NavigateToChatControllerParams(navigationController: navigationController, context: strongSelf.context, chatLocation: chatLocation, activateInput: (activateInput && !peer.isDeleted) ? .text : nil, scrollToEndIfExists: scrollToEndIfExists, animated: false, options: navigationAnimationOptions, parentGroupId: groupId._asGroup(), chatListFilter: chatListFilterId, completion: {controller in
 
 //                                if let _ = self{
 //                                    if let chatController = controller as? ChatControllerImpl {
-//                                        print("chatController:",chatController)
+                                        print("controller:",controller)
 //                                    }
 //
 //                                }
@@ -1048,7 +1052,8 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
 //                            print("results:",results)
                             // NOT CLEAR - peer.id ? chatLocation.peerId
                             //2:Id(rawValue: 1375690723):0_30728
-                            let message = Message(stableId: 0, stableVersion: 0, id: MessageId(peerId: chatLocation.peerId, namespace: 0, id: 0_30728), globallyUniqueId: nil, groupingKey: nil, groupInfo: nil, threadId: nil, timestamp: 0, flags: [], tags: [], globalTags: [], localTags: [], forwardInfo: nil, author: nil, text: "", attributes: [], media: [], peers: SimpleDictionary(), associatedMessages: SimpleDictionary(), associatedMessageIds: [], associatedMedia: [:], associatedThreadInfo: nil)
+                            let obamaMessageId = MessageId(peerId: chatLocation.peerId, namespace: 0, id: 0_30728) // TODO - find the one that corresponds to latest message in chat controller
+                            let message = Message(stableId: 0, stableVersion: 0, id: obamaMessageId, globallyUniqueId: nil, groupingKey: nil, groupInfo: nil, threadId: nil, timestamp: 0, flags: [], tags: [], globalTags: [], localTags: [], forwardInfo: nil, author: nil, text: "", attributes: [], media: [], peers: SimpleDictionary(), associatedMessages: SimpleDictionary(), associatedMessageIds: [], associatedMedia: [:], associatedThreadInfo: nil)
                             
 //                            let source = GalleryControllerItemSource.standaloneMessage(message)
                                     let source = GalleryControllerItemSource.peerMessagesAtId(messageId: message.id, chatLocation: .peer(id: message.id.peerId), chatLocationContextHolder: Atomic<ChatLocationContextHolder?>(value: nil))
