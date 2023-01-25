@@ -463,7 +463,7 @@ public class GalleryController: ViewController, StandalonePresentableController,
                         let anchor =  HistoryViewInputAnchor.index(message!.index)
                         let viewLocation = context.chatLocationInput(for: chatLocation, contextHolder: chatLocationContextHolder)
                         
-                        print("🍭  peerMessagesAtId:message.id",message?.id)
+                        print("🍭  peerMessagesAtId:message.id",message!.id)
                         
                         print("🍭  peerMessagesAtId:chatLocation",chatLocation)
                         print("🍭  peerMessagesAtId:chatLocationContextHolder",chatLocationContextHolder)
