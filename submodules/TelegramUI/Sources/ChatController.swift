@@ -507,7 +507,7 @@ public final class ChatControllerImpl: TelegramBaseController, ChatController, G
         }
     }
     
-    public var scheduledScrollToMessageId: (MessageId, Double?)?
+    private var scheduledScrollToMessageId: (MessageId, Double?)?
     
     public var purposefulAction: (() -> Void)?
     var updatedClosedPinnedMessageId: ((MessageId) -> Void)?
@@ -674,7 +674,6 @@ public final class ChatControllerImpl: TelegramBaseController, ChatController, G
             var isLocation = false
                         
             for media in message.media {
-                print("INFO: go through every media item")
                 if media is TelegramMediaMap {
                     isLocation = true
                 }

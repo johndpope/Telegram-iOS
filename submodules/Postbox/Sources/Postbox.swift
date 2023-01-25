@@ -2829,6 +2829,7 @@ final class PostboxImpl {
         orderStatistics: MessageHistoryViewOrderStatistics,
         additionalData: [AdditionalMessageHistoryViewData]
     ) -> Disposable {
+        print("🌱syncAroundMessageHistoryViewForPeerId...")
         var topTaggedMessages: [MessageId.Namespace: MessageHistoryTopTaggedMessage?] = [:]
         var mainPeerIdForTopTaggedMessages: PeerId?
         switch peerIds {
@@ -2926,7 +2927,17 @@ final class PostboxImpl {
             readStates = transientReadStates
         }
         
+        print("🌱 appendMessagesFromTheSameGroup:",appendMessagesFromTheSameGroup)
+        print("🌱 namespaces:",namespaces)
+        print("🌱 count:",count)
+        print("🌱 topTaggedMessages:",topTaggedMessages)
+        print("🌱 peerIds:",peerIds)
+        print("🌱 anchor:",anchor)
+        
         let mutableView = MutableMessageHistoryView(postbox: self, orderStatistics: orderStatistics, clipHoles: clipHoles, peerIds: peerIds, ignoreMessagesInTimestampRange: ignoreMessagesInTimestampRange, anchor: anchor, combinedReadStates: readStates, transientReadStates: transientReadStates, tag: tagMask, appendMessagesFromTheSameGroup: appendMessagesFromTheSameGroup, namespaces: namespaces, count: count, topTaggedMessages: topTaggedMessages, additionalDatas: additionalDataEntries, getMessageCountInRange: { lowerBound, upperBound in
+            
+         
+            
             if let tagMask = tagMask {
                 return Int32(self.messageHistoryTable.getMessageCountInRange(peerId: lowerBound.id.peerId, namespace: lowerBound.id.namespace, tag: tagMask, lowerBound: lowerBound, upperBound: upperBound))
             } else {
@@ -2957,7 +2968,9 @@ final class PostboxImpl {
             }
         }
         
-        subscriber.putNext((MessageHistoryView(mutableView), initialUpdateType, initialData))
+        // 🪶  These become entries in the gallery controller 
+        let messageValue = (MessageHistoryView(mutableView), initialUpdateType, initialData)
+        subscriber.putNext(messageValue)
         let disposable = signal.start(next: { next in
             subscriber.putNext((next.0, next.1, nil))
         })

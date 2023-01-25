@@ -435,6 +435,7 @@ public class GalleryController: ViewController, StandalonePresentableController,
         let message: Signal<Message?, NoError>
         switch source {
             case let .peerMessagesAtId(messageId, _, _):
+            print("🌱 peerMessagesAtId:",messageId)
                 message = context.account.postbox.messageAtId(messageId)
             case let .standaloneMessage(m):
                 message = .single(m)
@@ -458,12 +459,24 @@ public class GalleryController: ViewController, StandalonePresentableController,
                         } else {
                             namespaces = .not(Namespaces.Message.allScheduled)
                         }
-                        return context.account.postbox.aroundMessageHistoryViewForLocation(context.chatLocationInput(for: chatLocation, contextHolder: chatLocationContextHolder), anchor: .index(message!.index), ignoreMessagesInTimestampRange: nil, count: 50, clipHoles: false, fixedCombinedReadStates: nil, topTaggedMessageIdNamespaces: [], tagMask: tags, appendMessagesFromTheSameGroup: false, namespaces: namespaces, orderStatistics: [.combinedLocation])
+                        
+                        let anchor =  HistoryViewInputAnchor.index(message!.index)
+                        let viewLocation = context.chatLocationInput(for: chatLocation, contextHolder: chatLocationContextHolder)
+                        
+                        print("🍭  peerMessagesAtId:message.id",message?.id)
+                        
+                        print("🍭  peerMessagesAtId:chatLocation",chatLocation)
+                        print("🍭  peerMessagesAtId:chatLocationContextHolder",chatLocationContextHolder)
+                        print("🍭  anchor",anchor)
+                       
+                        return context.account.postbox.aroundMessageHistoryViewForLocation(viewLocation, anchor: anchor, ignoreMessagesInTimestampRange: nil, count: 50, clipHoles: false, fixedCombinedReadStates: nil, topTaggedMessageIdNamespaces: [], tagMask: tags, appendMessagesFromTheSameGroup: false, namespaces: namespaces, orderStatistics: [.combinedLocation])
                         |> mapToSignal { (view, _, _) -> Signal<GalleryMessageHistoryView?, NoError> in
                             let mapped = GalleryMessageHistoryView.view(view)
                             return .single(mapped)
                         }
                     } else {
+                        print("🌱 chatLocation:",chatLocation)
+                        print("🌱 chatLocationContextHolder:",chatLocationContextHolder)
                         return .single(GalleryMessageHistoryView.entries([MessageHistoryEntry(message: message!, isRead: false, location: nil, monthLocation: nil, attributes: MutableMessageHistoryEntryAttributes(authorIsContact: false))], false, false))
                 }
                 case .standaloneMessage:
@@ -507,6 +520,8 @@ public class GalleryController: ViewController, StandalonePresentableController,
                         let entries = view.entries
                         var centralEntryStableId: UInt32?
                         loop: for i in 0 ..< entries.count {
+                            print("🌱 entries.count:",entries.count)
+                            
                             let message = entries[i].message
                             switch source {
                                 case let .peerMessagesAtId(messageId, _, _):

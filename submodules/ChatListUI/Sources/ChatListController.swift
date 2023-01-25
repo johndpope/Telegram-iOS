@@ -1069,15 +1069,15 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
                             chatLocation = .peer(EnginePeer(myChannel)) //  🪶  peer - channel : <TelegramChannel: 0x600003dc2490>
 
                             let chatListFilterId = strongSelf.chatListDisplayNode.mainContainerNode.currentItemNode.chatListFilter?.id
-                            let extractedExpr: NavigateToChatControllerParams = NavigateToChatControllerParams(navigationController: navigationController, context: strongSelf.context, chatLocation: chatLocation, activateInput: (activateInput && !peer.isDeleted) ? .text : nil, scrollToEndIfExists: scrollToEndIfExists, animated: false, options: navigationAnimationOptions, parentGroupId: groupId._asGroup(), chatListFilter: chatListFilterId, completion: { [weak self] controller in
+                            let extractedExpr: NavigateToChatControllerParams = NavigateToChatControllerParams(navigationController: navigationController, context: strongSelf.context, chatLocation: chatLocation, activateInput: (activateInput && !peer.isDeleted) ? .text : nil, scrollToEndIfExists: scrollToEndIfExists, animated: false, options: navigationAnimationOptions, parentGroupId: groupId._asGroup(), chatListFilter: chatListFilterId, completion: {_ in
 
-                                if let _ = self{
-                                    if let chatController = controller as? ChatControllerImpl {
-                                        print("chatController:",chatController)
-                                    }
-                                   
-                                }
-                          
+//                                if let _ = self{
+//                                    if let chatController = controller as? ChatControllerImpl {
+//                                        print("chatController:",chatController)
+//                                    }
+//
+//                                }
+//
                             })
                             
 //                        // a black empty movie to get started. todo - replace with group videos

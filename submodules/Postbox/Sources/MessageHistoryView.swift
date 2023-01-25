@@ -973,6 +973,7 @@ public final class MessageHistoryView {
     }
     
     init(_ mutableView: MutableMessageHistoryView) {
+        print("🌱 init mutableView MutableMessageHistoryView")
         self.tagMask = mutableView.tag
         self.namespaces = mutableView.namespaces
         self.isAddedToChatList = mutableView.isAddedToChatList
@@ -1019,13 +1020,21 @@ public final class MessageHistoryView {
                         } else {
                             read = false
                         }
+                        print("🌱 entry.message.id.namespace:",entry.message.id.namespace)
+                        print("🌱 mutableView loaded entry.message.id:",entry.message.id)
                         entries.append(MessageHistoryEntry(message: entry.message, isRead: read, location: entry.location, monthLocation: entry.monthLocation, attributes: entry.attributes))
+                    }else{
+                        print("🌱 wrong message namespace:",entry.message.id.namespace)
                     }
                 }
             } else {
                 for entry in state.entries {
                     if mutableView.namespaces.contains(entry.message.id.namespace) {
+//                        print("🌱 mutableView loaded unread entry.message:",entry.message)
+                        print("🌱 entry.message.id.namespace:",entry.message.id.namespace)
                         entries.append(MessageHistoryEntry(message: entry.message, isRead: false, location: entry.location, monthLocation: entry.monthLocation, attributes: entry.attributes))
+                    }else{
+                        print("🌱 wrong message namespace:",entry.message.id.namespace)
                     }
                 }
             }
