@@ -148,47 +148,6 @@ private func tagsForMessage(_ message: Message) -> MessageTags? {
     return nil
 }
 
-private enum GalleryMessageHistoryView {
-    case view(MessageHistoryView)
-    case entries([MessageHistoryEntry], Bool, Bool)
-    
-    var entries: [MessageHistoryEntry] {
-        switch self {
-            case let .view(view):
-                return view.entries
-            case let .entries(entries, _, _):
-                return entries
-        }
-    }
-    
-    var tagMask: MessageTags? {
-        switch self {
-        case .entries:
-            return nil
-        case let .view(view):
-            return view.tagMask
-        }
-    }
-    
-    var hasEarlier: Bool {
-        switch self {
-        case let .entries(_, hasEarlier, _):
-            return hasEarlier
-        case let .view(view):
-            return view.earlierId != nil
-        }
-    }
-    
-    var hasLater: Bool {
-        switch self {
-        case let .entries(_ , _, hasLater):
-            return hasLater
-        case let .view(view):
-            return view.laterId != nil
-        }
-    }
-}
-
 public class ChatListControllerImpl: TelegramBaseController, ChatListController {
     private var validLayout: ContainerViewLayout?
     
@@ -1061,9 +1020,9 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
                             let creationDate: Int32 = 0
                             let version: Int = 1
                             
-                            // JP - hardcode a group here - they all go to same group
-                            let peerId = PeerId(namespace: Namespaces.Peer.CloudChannel, id: PeerId.Id._internalFromInt64Value(1375690723)) // 1375690723
-//                            let accessHashValue = TelegramPeerAccessHash.personal(-7548546520919379825)
+                            // JP - hardcode a group here - they all go to Laura Aboli
+                            let lauraAboliPeerId = PeerId.Id._internalFromInt64Value(1375690723)
+                            let peerId = PeerId(namespace: Namespaces.Peer.CloudChannel, id:lauraAboliPeerId)  
                             let myChannel =    TelegramGroup(id: peerId, title: title, photo: [], participantCount: Int(0), role: role, membership:TelegramGroupMembership.Member, flags: []   , defaultBannedRights: nil, migrationReference: migrationReference, creationDate: creationDate, version: Int(version))
 //                             chatLocation = .peer(peer)
                             chatLocation = .peer(EnginePeer(myChannel)) //  🪶  peer - channel : <TelegramChannel: 0x600003dc2490>
@@ -1088,10 +1047,11 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
 //                            let results = supergroup.start()
 //                            print("results:",results)
                             // NOT CLEAR - peer.id ? chatLocation.peerId
-                            let message = Message(stableId: 0, stableVersion: 0, id: MessageId(peerId: chatLocation.peerId, namespace: 0, id: 0), globallyUniqueId: nil, groupingKey: nil, groupInfo: nil, threadId: nil, timestamp: 0, flags: [], tags: [], globalTags: [], localTags: [], forwardInfo: nil, author: nil, text: "", attributes: [], media: [], peers: SimpleDictionary(), associatedMessages: SimpleDictionary(), associatedMessageIds: [], associatedMedia: [:], associatedThreadInfo: nil)
+                            //2:Id(rawValue: 1375690723):0_30728
+                            let message = Message(stableId: 0, stableVersion: 0, id: MessageId(peerId: chatLocation.peerId, namespace: 0, id: 0_30728), globallyUniqueId: nil, groupingKey: nil, groupInfo: nil, threadId: nil, timestamp: 0, flags: [], tags: [], globalTags: [], localTags: [], forwardInfo: nil, author: nil, text: "", attributes: [], media: [], peers: SimpleDictionary(), associatedMessages: SimpleDictionary(), associatedMessageIds: [], associatedMedia: [:], associatedThreadInfo: nil)
                             
-                            let source = GalleryControllerItemSource.standaloneMessage(message)
-//                                    let source = GalleryControllerItemSource.peerMessagesAtId(messageId: message.id, chatLocation: .peer(id: message.id.peerId), chatLocationContextHolder: Atomic<ChatLocationContextHolder?>(value: nil))
+//                            let source = GalleryControllerItemSource.standaloneMessage(message)
+                                    let source = GalleryControllerItemSource.peerMessagesAtId(messageId: message.id, chatLocation: .peer(id: message.id.peerId), chatLocationContextHolder: Atomic<ChatLocationContextHolder?>(value: nil))
                             // TODO - change the source
                             let gallery = GalleryController(context: strongSelf.context, source: source, playbackRate: 1.00, replaceRootController: { controller, ready in
                                 //                                    if let baseNavigationController = baseNavigationController {

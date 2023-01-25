@@ -1022,6 +1022,7 @@ public final class MessageHistoryView {
                         }
                         print("🌱 entry.message.id.namespace:",entry.message.id.namespace)
                         print("🌱 mutableView loaded entry.message.id:",entry.message.id)
+                        print("🌱 mutableView loaded entry.message.id.peerId:",entry.message.id.peerId)
                         entries.append(MessageHistoryEntry(message: entry.message, isRead: read, location: entry.location, monthLocation: entry.monthLocation, attributes: entry.attributes))
                     }else{
                         print("🌱 wrong message namespace:",entry.message.id.namespace)

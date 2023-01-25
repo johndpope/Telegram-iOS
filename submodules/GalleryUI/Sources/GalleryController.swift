@@ -464,6 +464,7 @@ public class GalleryController: ViewController, StandalonePresentableController,
                         let viewLocation = context.chatLocationInput(for: chatLocation, contextHolder: chatLocationContextHolder)
                         
                         print("🍭  peerMessagesAtId:message.id",message!.id)
+                        print("🍭  peerMessagesAtId:message.id",message!.stableId)
                         
                         print("🍭  peerMessagesAtId:chatLocation",chatLocation)
                         print("🍭  peerMessagesAtId:chatLocationContextHolder",chatLocationContextHolder)
