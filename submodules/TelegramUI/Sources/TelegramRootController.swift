@@ -23,7 +23,7 @@ public final class TelegramRootController: NavigationController {
     
     public var rootTabController: TabBarController?
     
-    public var galleryController: GalleryController? // TODO - make this WEVGalleryPageNode
+    public var galleryController: WEVGalleryViewController?
     public var contactsController: ContactsController?
     public var callListController: CallListController?
     public var chatListController: ChatListController?
@@ -105,12 +105,8 @@ public final class TelegramRootController: NavigationController {
         let callListController = CallListController(context: self.context, mode: .tab)
         
         var controllers: [ViewController] = []
-//        
-//        let galleryController = GalleryController(context: self.context)
-////        contactsController.switchToChatsController = {  [weak self] in
-////            self?.openChatsController(activateSearch: false)
-////        }
-//        controllers.append(galleryController)
+//
+
         
         let contactsController = ContactsController(context: self.context)
         contactsController.switchToChatsController = {  [weak self] in
@@ -142,8 +138,43 @@ public final class TelegramRootController: NavigationController {
         accountSettingsController.parentController = self
         controllers.append(accountSettingsController)
                 
+        
+        
+        /* 
+        
+        let chatLocation: NavigateToChatControllerParams.Location
+        let title = "3D to 5D Consciousness"
+        let role: TelegramGroupRole = .member
+        let migrationReference: TelegramGroupToChannelMigrationReference? = nil
+        let creationDate: Int32 = 0
+        let version: Int = 1
+        
+        // JP - hardcode a group here - they all go to Laura Aboli
+      let lauraAboliPeerId = PeerId.Id._internalFromInt64Value(1375690723)
+        let peerId = PeerId(namespace: Namespaces.Peer.CloudChannel, id:lauraAboliPeerId)
+        let myChannel =    TelegramGroup(id: peerId, title: title, photo: [], participantCount: Int(0), role: role, membership:TelegramGroupMembership.Member, flags: []   , defaultBannedRights: nil, migrationReference: migrationReference, creationDate: creationDate, version: Int(version))
+//                             chatLocation = .peer(peer)
+        chatLocation = .peer(EnginePeer(myChannel)) //  🪶  peer - channel : <TelegramChannel: 0x600003dc2490>
+
+
+        let message = Message(stableId: 0, stableVersion: 0, id: MessageId(peerId: chatLocation.peerId, namespace: 0, id: 0_30728), globallyUniqueId: nil, groupingKey: nil, groupInfo: nil, threadId: nil, timestamp: 0, flags: [], tags: [], globalTags: [], localTags: [], forwardInfo: nil, author: nil, text: "", attributes: [], media: [], peers: SimpleDictionary(), associatedMessages: SimpleDictionary(), associatedMessageIds: [], associatedMedia: [:], associatedThreadInfo: nil)
+
+         let source = GalleryControllerItemSource.peerMessagesAtId(messageId: message.id, chatLocation: .peer(id: message.id.peerId), chatLocationContextHolder: Atomic<ChatLocationContextHolder?>(value: nil))
+        // TODO - change the source
+ 
+        
+        let navigationController = NavigationController(mode: .single, theme: NavigationControllerTheme(presentationTheme: presentationData.theme))
+
+        let gallery = WEVGalleryViewController(context: self.context, source: source, playbackRate: 1.00, replaceRootController: { controller, ready in
+     
+        }, baseNavigationController: navigationController)
+
+        controllers.append(gallery)
+        */
+        
         tabBarController.setControllers(controllers, selectedIndex: restoreSettignsController != nil ? (controllers.count - 1) : (controllers.count - 2))
         
+//        self.galleryController = gallery
         self.contactsController = contactsController
         self.callListController = callListController
         self.chatListController = chatListController
@@ -157,6 +188,7 @@ public final class TelegramRootController: NavigationController {
             return
         }
         var controllers: [ViewController] = []
+//        controllers.append(self.galleryController!)
         controllers.append(self.contactsController!)
         if showCallsTab {
             controllers.append(self.callListController!)
