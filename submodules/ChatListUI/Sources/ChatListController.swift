@@ -986,10 +986,10 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
         self.chatListDisplayNode.mainContainerNode.peerSelected = { [weak self] peer, threadId, animated, activateInput, promoInfo in
             if let strongSelf = self {
                 if let navigationController = strongSelf.navigationController as? NavigationController {
-                    var scrollToEndIfExists = false
-                    if let layout = strongSelf.validLayout, case .regular = layout.metrics.widthClass {
-                        scrollToEndIfExists = true
-                    }
+//                    var scrollToEndIfExists = false
+//                    if let layout = strongSelf.validLayout, case .regular = layout.metrics.widthClass {
+//                        scrollToEndIfExists = true
+//                    }
 
                     if case let .channel(channel) = peer, channel.flags.contains(.isForum), threadId == nil {
                         strongSelf.chatListDisplayNode.clearHighlightAnimated(true)
@@ -1004,14 +1004,14 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
                             let _ = strongSelf.context.sharedContext.navigateToForumThread(context: strongSelf.context, peerId: peer.id, threadId: threadId, messageId: nil, navigationController: navigationController, activateInput: nil, keepStack: .never).start()
                             strongSelf.chatListDisplayNode.clearHighlightAnimated(true)
                         } else {
-                            var navigationAnimationOptions: NavigationAnimationOptions = []
-                            var groupId: EngineChatList.Group = .root
-                            if case let .chatList(groupIdValue) = strongSelf.location {
-                                groupId = groupIdValue
-                                if case .root = groupIdValue {
-                                    navigationAnimationOptions = .removeOnMasterDetails
-                                }
-                            }
+//                            var navigationAnimationOptions: NavigationAnimationOptions = []
+//                            var groupId: EngineChatList.Group = .root
+//                            if case let .chatList(groupIdValue) = strongSelf.location {
+//                                groupId = groupIdValue
+//                                if case .root = groupIdValue {
+//                                    navigationAnimationOptions = .removeOnMasterDetails
+//                                }
+//                            }
                             
                             let chatLocation: NavigateToChatControllerParams.Location
                             let title = "3D to 5D Consciousness"
@@ -1027,18 +1027,19 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
 //                             chatLocation = .peer(peer)
                             chatLocation = .peer(EnginePeer(myChannel)) //  🪶  peer - channel : <TelegramChannel: 0x600003dc2490>
 
-                            let chatListFilterId = strongSelf.chatListDisplayNode.mainContainerNode.currentItemNode.chatListFilter?.id
-                            let extractedExpr: NavigateToChatControllerParams = NavigateToChatControllerParams(navigationController: navigationController, context: strongSelf.context, chatLocation: chatLocation, activateInput: (activateInput && !peer.isDeleted) ? .text : nil, scrollToEndIfExists: scrollToEndIfExists, animated: false, options: navigationAnimationOptions, parentGroupId: groupId._asGroup(), chatListFilter: chatListFilterId, completion: {_ in
-
-//                                if let _ = self{
-//                                    if let chatController = controller as? ChatControllerImpl {
-//                                        print("chatController:",chatController)
-//                                    }
+//                            let chatListFilterId = strongSelf.chatListDisplayNode.mainContainerNode.currentItemNode.chatListFilter?.id
+//                            let extractedExpr: NavigateToChatControllerParams = NavigateToChatControllerParams(navigationController: navigationController, context: strongSelf.context, chatLocation: chatLocation, activateInput: (activateInput && !peer.isDeleted) ? .text : nil, scrollToEndIfExists: scrollToEndIfExists, animated: false, options: navigationAnimationOptions, parentGroupId: groupId._asGroup(), chatListFilter: chatListFilterId, completion: {_ in
 //
-//                                }
+////                                if let _ = self{
+////                                    if let chatController = controller as? ChatControllerImpl {
+////                                        print("chatController:",chatController)
+////                                    }
+////
+////                                }
+////
+//                            })
 //
-                            })
-                            
+//
 //                        // a black empty movie to get started. todo - replace with group videos
                             print("peer.id:",peer.id)
 //                            let superGroupId = PeerId(namespace: Namespaces.Peer.CloudChannel, id: PeerId.Id._internalFromInt64Value(88888888888))
@@ -1063,7 +1064,7 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
                             
                             
                             // push the chatlistcontroller for now
-                            strongSelf.context.sharedContext.navigateToChatController(extractedExpr)
+//                            strongSelf.context.sharedContext.navigateToChatController(extractedExpr)
                             
 
                         }

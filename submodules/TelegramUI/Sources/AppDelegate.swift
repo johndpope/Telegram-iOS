@@ -335,7 +335,7 @@ private final class AnimationSupportContext {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         precondition(!testIsLaunched)
         testIsLaunched = true
-        UserDefaults.standard.setValue(false, forKey: "UIViewShowAlignmentRects")
+   
         let _ = voipTokenPromise.get().start(next: { token in
             self.deviceToken.set(.single(token))
         })
