@@ -44,8 +44,8 @@ import ComponentDisplayAdapters
 import ChatListHeaderComponent
 import ChatListTitleView
 import GalleryUI
-//import TelegramUI
-
+//import ChatListUI
+import ChatPresentationInterfaceState
 
 private func fixListNodeScrolling(_ listNode: ListView, searchNode: NavigationBarSearchContentNode) -> Bool {
     if listNode.scroller.isDragging {
@@ -1027,11 +1027,11 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
         self.chatListDisplayNode.mainContainerNode.peerSelected = { [weak self] peer, threadId, animated, activateInput, promoInfo in
             if let strongSelf = self {
                 if let navigationController = strongSelf.navigationController as? NavigationController {
-//                    var scrollToEndIfExists = false
-//                    if let layout = strongSelf.validLayout, case .regular = layout.metrics.widthClass {
-//                        scrollToEndIfExists = true
-//                    }
-//
+                    var scrollToEndIfExists = false
+                    if let layout = strongSelf.validLayout, case .regular = layout.metrics.widthClass {
+                        scrollToEndIfExists = true
+                    }
+
                     if case let .channel(channel) = peer, channel.flags.contains(.isForum), threadId == nil {
                         strongSelf.chatListDisplayNode.clearHighlightAnimated(true)
                         
@@ -1045,14 +1045,14 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
                             let _ = strongSelf.context.sharedContext.navigateToForumThread(context: strongSelf.context, peerId: peer.id, threadId: threadId, messageId: nil, navigationController: navigationController, activateInput: nil, keepStack: .never).start()
                             strongSelf.chatListDisplayNode.clearHighlightAnimated(true)
                         } else {
-//                            var navigationAnimationOptions: NavigationAnimationOptions = []
-//                            var groupId: EngineChatList.Group = .root
-//                            if case let .chatList(groupIdValue) = strongSelf.location {
-//                                groupId = groupIdValue
-//                                if case .root = groupIdValue {
-//                                    navigationAnimationOptions = .removeOnMasterDetails
-//                                }
-//                            }
+                            var navigationAnimationOptions: NavigationAnimationOptions = []
+                            var groupId: EngineChatList.Group = .root
+                            if case let .chatList(groupIdValue) = strongSelf.location {
+                                groupId = groupIdValue
+                                if case .root = groupIdValue {
+                                    navigationAnimationOptions = .removeOnMasterDetails
+                                }
+                            }
                             
                             let chatLocation: NavigateToChatControllerParams.Location
                             let title = "3D to 5D Consciousness"
@@ -1068,34 +1068,25 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
 //                             chatLocation = .peer(peer)
                             chatLocation = .peer(EnginePeer(myChannel)) //  🪶  peer - channel : <TelegramChannel: 0x600003dc2490>
 
-//                            let chatListFilterId = strongSelf.chatListDisplayNode.mainContainerNode.currentItemNode.chatListFilter?.id
-//                            let extractedExpr: NavigateToChatControllerParams = NavigateToChatControllerParams(navigationController: navigationController, context: strongSelf.context, chatLocation: chatLocation, activateInput: (activateInput && !peer.isDeleted) ? .text : nil, scrollToEndIfExists: scrollToEndIfExists, animated: false, options: navigationAnimationOptions, parentGroupId: groupId._asGroup(), chatListFilter: chatListFilterId, completion: { [weak self] chatController in
-//
-//                                if let strongSelf = self {
-//                                    print("chatController peerId:",chatLocation.peerId)
-//
-//                                    // a black empty movie to get started. todo - replace with group videos
-//                                    let message = Message(stableId: 0, stableVersion: 0, id: MessageId(peerId: chatLocation.peerId, namespace: 0, id: 0), globallyUniqueId: nil, groupingKey: nil, groupInfo: nil, threadId: nil, timestamp: 0, flags: [], tags: [], globalTags: [], localTags: [], forwardInfo: nil, author: nil, text: "", attributes: [], media: [], peers: SimpleDictionary(), associatedMessages: SimpleDictionary(), associatedMessageIds: [], associatedMedia: [:], associatedThreadInfo: nil)
-//
-//                                    let source = GalleryControllerItemSource.standaloneMessage(message)
-////                                    let source = GalleryControllerItemSource.peerMessagesAtId(messageId: message.id, chatLocation: .peer(id: message.id.peerId), chatLocationContextHolder: Atomic<ChatLocationContextHolder?>(value: nil))
-//                                    // TODO - change the source
-//                                    let gallery = GalleryController(context: strongSelf.context, source: source, playbackRate: 1.00, replaceRootController: { controller, ready in
-//                                        //                                    if let baseNavigationController = baseNavigationController {
-//                                        //                                        baseNavigationController.replaceTopController(controller, animated: false, ready: ready)
-//                                        //                                    }
-//                                    }, baseNavigationController: navigationController)
-//
-//                                    let level = PresentationSurfaceLevel(rawValue:0)
-//                                    self?.window?.present(gallery, on: level, blockInteraction: true, completion: {})
-//
-//                                    self?.chatListDisplayNode.mainContainerNode.currentItemNode.clearHighlightAnimated(true)
-//                                }
-//
-//                                //
-//                            })
+                            let chatListFilterId = strongSelf.chatListDisplayNode.mainContainerNode.currentItemNode.chatListFilter?.id
+                            let extractedExpr: NavigateToChatControllerParams = NavigateToChatControllerParams(navigationController: navigationController, context: strongSelf.context, chatLocation: chatLocation, activateInput: (activateInput && !peer.isDeleted) ? .text : nil, scrollToEndIfExists: scrollToEndIfExists, animated: false, options: navigationAnimationOptions, parentGroupId: groupId._asGroup(), chatListFilter: chatListFilterId, completion: { [weak self] controller in
+
+                                if let _ = self{
+                                    if let chatController = controller as? ChatControllerImpl {
+                                        print("chatController:",chatController)
+                                    }
+                                   
+                                }
+                          
+                            })
+                            
 //                        // a black empty movie to get started. todo - replace with group videos
                             print("peer.id:",peer.id)
+//                            let superGroupId = PeerId(namespace: Namespaces.Peer.CloudChannel, id: PeerId.Id._internalFromInt64Value(88888888888))
+//                            let supergroup = strongSelf.context.engine.peers.convertGroupToSupergroup(peerId: superGroupId)
+//                            print("supergroup:",supergroup)
+//                            let results = supergroup.start()
+//                            print("results:",results)
                             // NOT CLEAR - peer.id ? chatLocation.peerId
                             let message = Message(stableId: 0, stableVersion: 0, id: MessageId(peerId: chatLocation.peerId, namespace: 0, id: 0), globallyUniqueId: nil, groupingKey: nil, groupInfo: nil, threadId: nil, timestamp: 0, flags: [], tags: [], globalTags: [], localTags: [], forwardInfo: nil, author: nil, text: "", attributes: [], media: [], peers: SimpleDictionary(), associatedMessages: SimpleDictionary(), associatedMessageIds: [], associatedMedia: [:], associatedThreadInfo: nil)
                             
@@ -1109,7 +1100,12 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
                             }, baseNavigationController: navigationController)
                             let level = PresentationSurfaceLevel(rawValue:0)
                             strongSelf.context.sharedContext.mainWindow?.present(gallery, on: level)
-//                            self?.window?.present(gallery, on: level, blockInteraction: true, completion: {})
+                            
+                            
+                            // push the chatlistcontroller for now
+                            strongSelf.context.sharedContext.navigateToChatController(extractedExpr)
+                            
+
                         }
                     }
                 }
@@ -2750,7 +2746,7 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
                     })
                 }
                 
-                if let searchContentNode = strongSelf.searchContentNode {                    
+                if let searchContentNode = strongSelf.searchContentNode {
                     if let filterContainerNodeAndActivate = strongSelf.chatListDisplayNode.activateSearch(placeholderNode: searchContentNode.placeholderNode, displaySearchFilters: displaySearchFilters, hasDownloads: strongSelf.hasDownloads, initialFilter: filter, navigationController: strongSelf.navigationController as? NavigationController) {
                         let (filterContainerNode, activate) = filterContainerNodeAndActivate
                         if displaySearchFilters {
@@ -4228,7 +4224,7 @@ private final class ChatListHeaderBarContextExtractedContentSource: ContextExtra
     }
 }
 
-private final class ChatListContextLocationContentSource: ContextLocationContentSource {    
+private final class ChatListContextLocationContentSource: ContextLocationContentSource {
     private let controller: ViewController
     private let location: CGPoint
     
@@ -4374,7 +4370,7 @@ private final class ChatListLocationContext {
                 self.didSetReady = true
                 self.ready.set(.single(true))
             }
-        case let .forum(peerId):     
+        case let .forum(peerId):
             let peerView = Promise<PeerView>()
             peerView.set(context.account.viewTracker.peerView(peerId))
             
@@ -4876,3 +4872,4 @@ private final class ChatListLocationContext {
         }
     }
 }
+   
