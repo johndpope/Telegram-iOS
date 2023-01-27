@@ -1045,13 +1045,7 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
                             
 //                        // a black empty movie to get started. todo - replace with group videos
                             print("peer.id:",peer.id)
-//                            let superGroupId = PeerId(namespace: Namespaces.Peer.CloudChannel, id: PeerId.Id._internalFromInt64Value(88888888888))
-//                            let supergroup = strongSelf.context.engine.peers.convertGroupToSupergroup(peerId: superGroupId)
-//                            print("supergroup:",supergroup)
-//                            let results = supergroup.start()
-//                            print("results:",results)
-                            // NOT CLEAR - peer.id ? chatLocation.peerId
-                            //2:Id(rawValue: 1375690723):0_30728
+
                             let obamaMessageId = MessageId(peerId: chatLocation.peerId, namespace: 0, id: 0_30728) // TODO - find the one that corresponds to latest message in chat controller
                             let message = Message(stableId: 0, stableVersion: 0, id: obamaMessageId, globallyUniqueId: nil, groupingKey: nil, groupInfo: nil, threadId: nil, timestamp: 0, flags: [], tags: [], globalTags: [], localTags: [], forwardInfo: nil, author: nil, text: "", attributes: [], media: [], peers: SimpleDictionary(), associatedMessages: SimpleDictionary(), associatedMessageIds: [], associatedMedia: [:], associatedThreadInfo: nil)
                             
@@ -1063,8 +1057,9 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
                                 //                                        baseNavigationController.replaceTopController(controller, animated: false, ready: ready)
                                 //                                    }
                             }, baseNavigationController: navigationController)
-                            let level = PresentationSurfaceLevel(rawValue:0)
-                            strongSelf.context.sharedContext.mainWindow?.present(gallery, on: level)
+//                            let level = PresentationSurfaceLevel(rawValue:0)
+//                            strongSelf.context.sharedContext.mainWindow?.present(gallery, on: level)
+                            print("gallery:",gallery)
                             
                             
                             // push the chatlistcontroller for now

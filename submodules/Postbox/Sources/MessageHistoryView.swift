@@ -1020,22 +1020,22 @@ public final class MessageHistoryView {
                         } else {
                             read = false
                         }
-                        print("🌱 entry.message.id.namespace:",entry.message.id.namespace)
+//                        print("🌱 entry.message.id.namespace:",entry.message.id.namespace)
                         print("🌱 mutableView loaded entry.message.id:",entry.message.id)
                         print("🌱 mutableView loaded entry.message.id.peerId:",entry.message.id.peerId)
                         entries.append(MessageHistoryEntry(message: entry.message, isRead: read, location: entry.location, monthLocation: entry.monthLocation, attributes: entry.attributes))
                     }else{
-                        print("🌱 wrong message namespace:",entry.message.id.namespace)
+//                        print("🌱 wrong message namespace:",entry.message.id.namespace)
                     }
                 }
             } else {
                 for entry in state.entries {
                     if mutableView.namespaces.contains(entry.message.id.namespace) {
 //                        print("🌱 mutableView loaded unread entry.message:",entry.message)
-                        print("🌱 entry.message.id.namespace:",entry.message.id.namespace)
+//                        print("🌱 entry.message.id.namespace:",entry.message.id.namespace)
                         entries.append(MessageHistoryEntry(message: entry.message, isRead: false, location: entry.location, monthLocation: entry.monthLocation, attributes: entry.attributes))
                     }else{
-                        print("🌱 wrong message namespace:",entry.message.id.namespace)
+//                        print("🌱 wrong message namespace:",entry.message.id.namespace)
                     }
                 }
             }
