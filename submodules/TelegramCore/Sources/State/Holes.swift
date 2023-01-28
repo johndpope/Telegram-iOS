@@ -625,7 +625,7 @@ func fetchMessageHistoryHole(accountPeerId: PeerId, source: FetchMessageHistoryH
                         chats = apiChats
                         users = apiUsers
                     case let .channelMessages(_, pts, _, _, apiMessages, apiTopics, apiChats, apiUsers):
-                        print("🏈  channelMessages apiMessages:",apiMessages)
+                        print("🏈  pinned Message? :",apiMessages)
                         print("apiChats:",apiChats)
                         print("apiUsers:",apiUsers)
                         print("pts:",pts)

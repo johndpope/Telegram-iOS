@@ -4,8 +4,13 @@ public final class FunctionDescription {
     public let name: String
     public let parameters: [(String, Any)]
     
-    init(name: String, parameters: [(String, Any)]) {
-        print("🪓 API: \(name)"," params:",parameters)
+    init(name: String, parameters: [(String, Any)],_ file: StaticString = #file,
+         _ function: StaticString = #function, _ line: UInt = #line) {
+        
+        let fileName = file.description.components(separatedBy: "/").last!
+              let source = "\(fileName):\(line) - \(function)"
+        
+        print("🪓 API: \(name)"," params:",parameters," source:",source)
         self.name = name
         self.parameters = parameters
     }
