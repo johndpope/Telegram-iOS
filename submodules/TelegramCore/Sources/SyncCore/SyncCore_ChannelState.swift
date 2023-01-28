@@ -1,5 +1,8 @@
 import Postbox
 
+
+// https://core.telegram.org/api/updates  Each event related to a message box (message created, message edited, message deleted, etc)
+// is identified by a unique autoincremented pts, or qts in case of secret chat updates, certain bot updates, etc.
 public final class ChannelState: PeerChatState, Equatable, CustomStringConvertible {
     public let pts: Int32
     public let invalidatedPts: Int32?
@@ -9,6 +12,8 @@ public final class ChannelState: PeerChatState, Equatable, CustomStringConvertib
         self.pts = pts
         self.invalidatedPts = invalidatedPts
         self.synchronizedUntilMessageId = synchronizedUntilMessageId
+        print("🥎 unique update event - pts:\(pts) synchronizedUntilMessageId: ",synchronizedUntilMessageId ?? "")
+   
     }
     
     public init(decoder: PostboxDecoder) {
