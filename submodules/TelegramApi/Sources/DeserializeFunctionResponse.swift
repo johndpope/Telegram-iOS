@@ -5,7 +5,7 @@ public final class FunctionDescription {
     public let parameters: [(String, Any)]
     
     init(name: String, parameters: [(String, Any)]) {
-        print("🪓 API: name:\(name)"," params:",parameters)
+        print("🪓 API: \(name)"," params:",parameters)
         self.name = name
         self.parameters = parameters
     }
