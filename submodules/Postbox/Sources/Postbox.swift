@@ -2880,7 +2880,9 @@ final class PostboxImpl {
                     let messages = self.getMessageGroup(at: id)
                     additionalDataEntries.append(.message(id, messages ?? []))
                 case let .peerChatState(peerId):
-                    additionalDataEntries.append(.peerChatState(peerId, self.peerChatStateTable.get(peerId)?.getLegacy() as? PeerChatState))
+                    let peerChatState = self.peerChatStateTable.get(peerId)?.getLegacy() as? PeerChatState
+                    print("🥎  peerChatState:",peerChatState ?? "")
+                    additionalDataEntries.append(.peerChatState(peerId, peerChatState))
                 case .totalUnreadState:
                     additionalDataEntries.append(.totalUnreadState(self.messageHistoryMetadataTable.getTotalUnreadState(groupId: .root)))
                 case let .peerNotificationSettings(peerId):

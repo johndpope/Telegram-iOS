@@ -5974,6 +5974,7 @@ public extension Api.functions.messages {
                         if let signature = reader.readInt32() {
                             result = Api.parse(reader, signature: signature) as? Api.messages.Messages
                         }
+                        print("🏓  messages.search >", result ?? "")
                         return result
                     })
                 }
