@@ -122,19 +122,18 @@ public final class WatchCommunicationManager {
                 "BRB": presentationData.strings.Watch_Suggestion_BRB,
                 "OnMyWay": presentationData.strings.Watch_Suggestion_OnMyWay
             ]
-            
             var suggestions: [String : String] = [:]
             for (key, defaultValue) in defaultSuggestions {
                 suggestions[key] = presets.customPresets[key] ?? defaultValue
             }
-            
             let fileManager = FileManager.default
             let presetsFileUrl = URL(fileURLWithPath: tempPath + "/presets.dat")
             
             if fileManager.fileExists(atPath: presetsFileUrl.path) {
                 try? fileManager.removeItem(atPath: presetsFileUrl.path)
             }
-            let data = NSKeyedArchiver.archivedData(withRootObject: suggestions)
+            let data  =  try! NSKeyedArchiver.archivedData(withRootObject: suggestions, requiringSecureCoding: false) //🔥
+
             try? data.write(to: presetsFileUrl)
             
             let _ = strongSelf.sendFile(url: presetsFileUrl, metadata: [TGBridgeIncomingFileIdentifierKey: "presets"]).start()

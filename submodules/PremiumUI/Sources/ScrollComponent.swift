@@ -118,9 +118,13 @@ final class ScrollComponent<ChildEnvironment: Equatable>: Component {
                 self.contentSize = contentSize
                 self.ignoreDidScroll = false
             }
-            if self.scrollIndicatorInsets != component.contentInsets {
-                self.scrollIndicatorInsets = component.contentInsets
+            if self.horizontalScrollIndicatorInsets != component.contentInsets {
+                self.horizontalScrollIndicatorInsets = component.contentInsets
             }
+            if self.verticalScrollIndicatorInsets != component.contentInsets {
+                self.verticalScrollIndicatorInsets = component.contentInsets
+            }
+            
             
             self.component = component
             

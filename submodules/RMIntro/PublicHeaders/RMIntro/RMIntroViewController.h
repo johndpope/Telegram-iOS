@@ -36,9 +36,9 @@
 @interface RMIntroViewController : UIViewController<UIScrollViewDelegate, GLKViewDelegate>
 {
     EAGLContext *_context;
-    
+
     GLKView *_glkView;
-    
+
     NSArray *_headlines;
     NSArray *_descriptions;
     
@@ -65,7 +65,6 @@
 
 - (UIView *)createAnimationSnapshot;
 - (UIView *)createTextSnapshot;
-
 @property (nonatomic) bool isEnabled;
 
 - (void)startTimer;

@@ -36,6 +36,8 @@ import UIKitRuntimeUtils
 import StoreKit
 import PhoneNumberFormat
 
+
+
 #if canImport(AppCenter)
 import AppCenter
 import AppCenterCrashes
@@ -76,7 +78,7 @@ private func isKeyboardViewContainer(view: NSObject) -> Bool {
 }
 
 private class ApplicationStatusBarHost: StatusBarHost {
-    private let application = UIApplication.shared
+    let application = UIApplication.shared
     
     var isApplicationInForeground: Bool {
         switch self.application.applicationState {
@@ -88,11 +90,23 @@ private class ApplicationStatusBarHost: StatusBarHost {
     }
     
     var statusBarFrame: CGRect {
-        return self.application.statusBarFrame
+        let window = UIApplication.shared.windows.filter {$0.isKeyWindow}.first
+        if let statusBarFrame =  window?.windowScene?.statusBarManager?.statusBarFrame{
+            return statusBarFrame
+        }else{
+            return .zero
+        }
+
     }
     var statusBarStyle: UIStatusBarStyle {
         get {
-            return self.application.statusBarStyle
+            let window = UIApplication.shared.windows.filter {$0.isKeyWindow}.first
+            if let  statusBarStyle = window?.windowScene?.statusBarManager?.statusBarStyle{
+                return statusBarStyle
+                
+            }else{
+                return UIStatusBarStyle.lightContent
+            }
         } set(value) {
             self.setStatusBarStyle(value, animated: false)
         }
@@ -114,7 +128,6 @@ private class ApplicationStatusBarHost: StatusBarHost {
         if #available(iOS 16.0, *) {
             return UIApplication.shared.internalGetKeyboard()
         }
-        
         for window in UIApplication.shared.windows {
             if isKeyboardWindow(window: window) {
                 return window
@@ -150,16 +163,16 @@ protocol SupportedStartCallIntent {
     var contacts: [INPerson]? { get }
 }
 
-@available(iOS 10.0, *)
-extension INStartAudioCallIntent: SupportedStartCallIntent {}
+
+extension INStartCallIntent: SupportedStartCallIntent {}
 
 protocol SupportedStartVideoCallIntent {
     @available(iOS 10.0, *)
     var contacts: [INPerson]? { get }
 }
 
-@available(iOS 10.0, *)
-extension INStartVideoCallIntent: SupportedStartVideoCallIntent {}
+
+extension INStartCallIntent: SupportedStartVideoCallIntent {}
 
 private enum QueuedWakeup: Int32 {
     case call
@@ -274,6 +287,7 @@ private final class AnimationSupportContext {
     private var buildConfig: BuildConfig?
     let episodeId = arc4random()
     
+//    DataManager.shared.app = self;
     private let isInForegroundPromise = ValuePromise<Bool>(false, ignoreRepeated: true)
     private var isInForegroundValue = false
     private let isActivePromise = ValuePromise<Bool>(false, ignoreRepeated: true)
@@ -331,11 +345,12 @@ private final class AnimationSupportContext {
     private var alertActions: (primary: (() -> Void)?, other: (() -> Void)?)?
     
     private let deviceToken = Promise<Data?>(nil)
-    
+
+
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         precondition(!testIsLaunched)
         testIsLaunched = true
-        UserDefaults.standard.setValue(false, forKey: "UIViewShowAlignmentRects")
+
         let _ = voipTokenPromise.get().start(next: { token in
             self.deviceToken.set(.single(token))
         })
@@ -361,9 +376,6 @@ private final class AnimationSupportContext {
         }
         self.window = window
         self.nativeWindow = window
-        
-        //self.animationSupportContext = AnimationSupportContext(window: window)
-        //self.animationSupportContext?.add()
         
         let clearNotificationsManager = ClearNotificationsManager(getNotificationIds: { completion in
             if #available(iOS 10.0, *) {
@@ -538,6 +550,7 @@ private final class AnimationSupportContext {
         TempBox.initializeShared(basePath: rootPath, processType: "app", launchSpecificId: Int64.random(in: Int64.min ... Int64.max))
         
         let legacyLogs: [String] = [
+            "logs",
             "broadcast-logs",
             "siri-logs",
             "widget-logs",
@@ -729,21 +742,21 @@ private final class AnimationSupportContext {
                 completion(false)
             }
         }, siriAuthorization: {
+            /*if #available(iOS 10, *) {
+                switch INPreferences.siriAuthorizationStatus() {
+                    case .authorized:
+                        return .allowed
+                    case .denied, .restricted:
+                        return .denied
+                    case .notDetermined:
+                        return .notDetermined
+                    @unknown default:
+                        return .notDetermined
+                }
+            } else {
+                return .denied
+            }*/
             return .denied
-//            if #available(iOS 10, *) {
-////                switch INPreferences.siriAuthorizationStatus() {
-////                    case .authorized:
-////                        return .allowed
-////                    case .denied, .restricted:
-////                        return .denied
-////                    case .notDetermined:
-////                        return .notDetermined
-////                    @unknown default:
-////                        return .notDetermined
-////                }
-//            } else {
-//                return .denied
-//            }
         }, getWindowHost: {
             return self.nativeWindow
         }, presentNativeController: { controller in
@@ -1325,9 +1338,10 @@ private final class AnimationSupportContext {
             self.isActivePromise.set(true)
         }
         
-        if UIApplication.shared.isStatusBarHidden {
-            UIApplication.shared.internalSetStatusBarHidden(false, animation: .none)
-        }
+        // 🔥 TODO - fix
+//        if UIApplication.shared.isStatusBarHidden {
+//            UIApplication.shared.internalSetStatusBarHidden(false, animation: .none)
+//        }
         
         /*if #available(iOS 13.0, *) {
             BGTaskScheduler.shared.register(forTaskWithIdentifier: baseAppBundleId + ".refresh", using: nil, launchHandler: { task in

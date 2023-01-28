@@ -277,9 +277,8 @@ class ChatDocumentGalleryItemNode: ZoomableContentGalleryItemNode, WKNavigationD
                                         webView.loadFileURL(URL(fileURLWithPath: data.path), allowingReadAccessTo: URL(fileURLWithPath: data.path))
                                 }
                             }
-                        } else if let webView = strongSelf.webView as? UIWebView {
-                            webView.loadRequest(URLRequest(url: URL(fileURLWithPath: data.path)))
                         }
+                        
                     }
                 }
             }))
@@ -388,7 +387,7 @@ class ChatDocumentGalleryItemNode: ZoomableContentGalleryItemNode, WKNavigationD
                 case .Fetching:
                     context.account.postbox.mediaBox.cancelInteractiveResourceFetch(fileReference.media.resource)
                 case .Remote:
-                self.fetchDisposable.set(fetchedMediaResource(mediaBox: context.account.postbox.mediaBox, userLocation: (self.message?.id.peerId).flatMap(MediaResourceUserLocation.peer) ?? .other, userContentType: .file, reference: fileReference.resourceReference(fileReference.media.resource)).start())
+                    self.fetchDisposable.set(fetchedMediaResource(mediaBox: context.account.postbox.mediaBox,  userLocation: (self.message?.id.peerId).flatMap(MediaResourceUserLocation.peer) ?? .other, userContentType: .file, reference: fileReference.resourceReference(fileReference.media.resource)).start())
                 default:
                     break
             }

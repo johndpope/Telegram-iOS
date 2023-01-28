@@ -102,7 +102,6 @@ typedef enum {
     NSDictionary<NSString *, NSString *> *_englishStrings;
     
     UIView *_wrapperView;
-    
     bool _loadedView;
 }
 @end
@@ -311,7 +310,6 @@ typedef enum {
     
     _wrapperView = [[UIScrollView alloc]initWithFrame:self.view.bounds];
     [self.view addSubview:_wrapperView];
-    
     _pageScrollView = [[UIScrollView alloc]initWithFrame:self.view.bounds];
     _pageScrollView.clipsToBounds = true;
     _pageScrollView.opaque = true;
@@ -579,7 +577,7 @@ typedef enum {
     }
     set_intro_background_color(red, green, blue);
     
-    set_telegram_textures(setup_texture(@"telegram_sphere.png", color), setup_texture(@"telegram_plane1.png", color));
+    set_telegram_textures(setup_texture(@"Group_1399.png", color), setup_texture(@"Rectangle_274.png", color));
     
     set_ic_textures(setup_texture(@"ic_bubble_dot.png", color), setup_texture(@"ic_bubble.png", color), setup_texture(@"ic_cam_lens.png", color), setup_texture(@"ic_cam.png", color), setup_texture(@"ic_pencil.png", color), setup_texture(@"ic_pin.png", color), setup_texture(@"ic_smile_eye.png", color), setup_texture(@"ic_smile.png", color), setup_texture(@"ic_videocam.png", color));
     

@@ -5813,6 +5813,7 @@ public final class ChatControllerImpl: TelegramBaseController, ChatController, G
                     let topVisibleMessage = topVisibleMessageRange?.upperBound.id
                     
                     if let scrolledToMessageId = scrolledToMessageId {
+                        print("scrolledToMessageId=true")
                         if let topVisibleMessage, let bottomVisibleMessage {
                             if scrolledToMessageId.allowedReplacementDirection.contains(.up) && topVisibleMessage < scrolledToMessageId.id {
                                 return .ready(ReferenceMessage.Loaded(id: topVisibleMessage, minId: bottomVisibleMessage, isScrolled: false))
@@ -5820,6 +5821,9 @@ public final class ChatControllerImpl: TelegramBaseController, ChatController, G
                         }
                         return .ready(ReferenceMessage.Loaded(id: scrolledToMessageId.id, minId: scrolledToMessageId.id, isScrolled: true))
                     } else if let topVisibleMessage, let bottomVisibleMessage {
+                        print("🍏 bottomVisibleMessage:",bottomVisibleMessage)
+                        print("🍏 chatDisplayNode.historyNode.topVisibleMessageRange:",topVisibleMessage)
+                        
                         return .ready(ReferenceMessage.Loaded(id: topVisibleMessage, minId: bottomVisibleMessage, isScrolled: false))
                     } else {
                         return nil

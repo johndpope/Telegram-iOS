@@ -5,6 +5,7 @@ private_headers = glob([
 ])
 
 objc_library(
+          
     name = "RMIntro",
     enable_modules = True,
     module_name = "RMIntro",
@@ -34,4 +35,7 @@ objc_library(
     visibility = [
         "//visibility:public",
     ],
+    # TODO(bugs.webrtc.org/12937): Remove OpenGL deprecation warning
+    # workaround.
+    defines = [ "GLES_SILENCE_DEPRECATION" ]
 )

@@ -15,7 +15,8 @@ public func activeAccountsAndPeers(context: AccountContext, includePrimary: Bool
         func accountWithPeer(_ context: AccountContext) -> Signal<(AccountContext, EnginePeer, Int32)?, NoError> {
             return combineLatest(context.account.postbox.peerView(id: context.account.peerId), renderedTotalUnreadCount(accountManager: sharedContext.accountManager, engine: context.engine))
             |> map { view, totalUnreadCount -> (EnginePeer?, Int32) in
-                return (view.peers[view.peerId].flatMap(EnginePeer.init), totalUnreadCount.0)
+                let telegramUserAccount = view.peers[view.peerId].flatMap(EnginePeer.init)
+                return (telegramUserAccount, totalUnreadCount.0)
             }
             |> distinctUntilChanged { lhs, rhs in
                 if lhs.0 != rhs.0 {

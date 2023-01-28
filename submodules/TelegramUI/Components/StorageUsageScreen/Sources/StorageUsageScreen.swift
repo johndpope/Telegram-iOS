@@ -476,15 +476,7 @@ final class StorageUsageScreenComponent: Component {
                     loadingView = current
                 } else {
                     let style: UIActivityIndicatorView.Style
-                    if environment.theme.overallDarkAppearance {
-                        style = .whiteLarge
-                    } else {
-                        if #available(iOS 13.0, *) {
-                            style = .large
-                        } else {
-                            style = .gray
-                        }
-                    }
+                    style = UIActivityIndicatorView.Style.large
                     loadingView = UIActivityIndicatorView(style: style)
                     self.loadingView = loadingView
                     loadingView.sizeToFit()

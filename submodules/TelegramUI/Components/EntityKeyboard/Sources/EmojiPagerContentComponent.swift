@@ -6051,8 +6051,13 @@ public final class EmojiPagerContentComponent: Component {
             if self.warpView != nil {
                 scrollIndicatorInsets.bottom += 20.0
             }
-            if self.scrollView.scrollIndicatorInsets != scrollIndicatorInsets {
-                self.scrollView.scrollIndicatorInsets = scrollIndicatorInsets
+            
+            if self.scrollView.verticalScrollIndicatorInsets != scrollIndicatorInsets{
+                self.scrollView.verticalScrollIndicatorInsets = scrollIndicatorInsets
+            }
+            
+            if self.scrollView.horizontalScrollIndicatorInsets != scrollIndicatorInsets {
+                self.scrollView.horizontalScrollIndicatorInsets = scrollIndicatorInsets
             }
             self.previousScrollingOffset = ScrollingOffsetState(value: scrollView.contentOffset.y, isDraggingOrDecelerating: scrollView.isDragging || scrollView.isDecelerating)
             
