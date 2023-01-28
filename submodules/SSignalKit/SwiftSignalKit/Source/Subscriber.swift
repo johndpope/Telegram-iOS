@@ -1,6 +1,7 @@
 import Foundation
 
 public final class Subscriber<T, E> {
+    var subscription: Timelane.Subscription
     private var next: ((T) -> Void)!
     private var error: ((E) -> Void)!
     private var completed: (() -> Void)!
@@ -10,6 +11,9 @@ public final class Subscriber<T, E> {
     internal var disposable: Disposable!
     
     public init(next: ((T) -> Void)! = nil, error: ((E) -> Void)! = nil, completed: (() -> Void)! = nil) {
+        self.subscription = Timelane.Subscription(name: String(describing: T.self), logger: Timelane.defaultLogger)
+     
+        self.subscription.begin()
         self.next = next
         self.error = error
         self.completed = completed
@@ -17,6 +21,7 @@ public final class Subscriber<T, E> {
     }
     
     deinit {
+//        self.subscription.end(state: .completed)
         var freeDisposable: Disposable?
         pthread_mutex_lock(&self.lock)
         if let disposable = self.disposable {
@@ -34,6 +39,7 @@ public final class Subscriber<T, E> {
     }
     
     internal func assignDisposable(_ disposable: Disposable) {
+        self.subscription.event(value: .value("start -> assignDisposable"))
         var dispose = false
         pthread_mutex_lock(&self.lock)
         if self.terminated {
@@ -45,10 +51,12 @@ public final class Subscriber<T, E> {
         
         if dispose {
             disposable.dispose()
+            self.subscription.end(state: .completed)
         }
     }
     
     internal func markTerminatedWithoutDisposal() {
+        self.subscription.event(value: .value("markTerminatedWithoutDisposal"))
         pthread_mutex_lock(&self.lock)
         if !self.terminated {
             self.terminated = true
@@ -60,6 +68,8 @@ public final class Subscriber<T, E> {
     }
     
     public func putNext(_ next: T) {
+        self.subscription.event(value: .value("putNext"))
+        
         var action: ((T) -> Void)! = nil
         pthread_mutex_lock(&self.lock)
         if !self.terminated {
@@ -73,6 +83,8 @@ public final class Subscriber<T, E> {
     }
     
     public func putError(_ error: E) {
+        self.subscription.event(value: .value("putError"))
+        
         var action: ((E) -> Void)! = nil
         
         var disposeDisposable: Disposable?
@@ -96,10 +108,12 @@ public final class Subscriber<T, E> {
         
         if let disposeDisposable = disposeDisposable {
             disposeDisposable.dispose()
+            self.subscription.end(state: .completed)
         }
     }
     
     public func putCompletion() {
+        self.subscription.event(value: .value("putCompletion"))
         var action: (() -> Void)! = nil
         
         var disposeDisposable: Disposable? = nil
@@ -140,6 +154,7 @@ public final class Subscriber<T, E> {
         
         if let disposeDisposable = disposeDisposable {
             disposeDisposable.dispose()
+            self.subscription.end(state: .completed)
         }
     }
 }
