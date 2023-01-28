@@ -2933,6 +2933,10 @@ final class PostboxImpl {
         print("🌱 topTaggedMessages:",topTaggedMessages)
         print("🌱 peerIds:",peerIds)
         print("🌱 anchor:",anchor)
+        print("🌱 orderStatistics:",orderStatistics)
+        print("🌱 clipHoles:",clipHoles)
+        print("🌱 additionalDataEntries:",additionalDataEntries)
+        
         
         let mutableView = MutableMessageHistoryView(postbox: self, orderStatistics: orderStatistics, clipHoles: clipHoles, peerIds: peerIds, ignoreMessagesInTimestampRange: ignoreMessagesInTimestampRange, anchor: anchor, combinedReadStates: readStates, transientReadStates: transientReadStates, tag: tagMask, appendMessagesFromTheSameGroup: appendMessagesFromTheSameGroup, namespaces: namespaces, count: count, topTaggedMessages: topTaggedMessages, additionalDatas: additionalDataEntries, getMessageCountInRange: { lowerBound, upperBound in
             

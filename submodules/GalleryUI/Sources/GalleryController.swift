@@ -528,16 +528,19 @@ public class GalleryController: ViewController, StandalonePresentableController,
                                 case let .peerMessagesAtId(messageId, _, _):
                                     if message.id == messageId {
                                         centralEntryStableId = message.stableId
+                                        print("🌱 centralEntryStableId:",centralEntryStableId ?? "")
                                         break loop
                                     }
                                 case let .standaloneMessage(m):
                                     if message.id == m.id {
                                         centralEntryStableId = message.stableId
+                                        print("🌱 centralEntryStableId:",centralEntryStableId ?? "")
                                         break loop
                                     }
                                 case let .custom(_, messageId, _):
                                     if message.id == messageId {
                                         centralEntryStableId = message.stableId
+                                        print("🌱 centralEntryStableId:",centralEntryStableId ?? "")
                                         break loop
                                     }
                             }

@@ -1010,6 +1010,8 @@ public final class MessageHistoryView {
             self.isLoadingEarlier = isLoadingEarlier
             entries = []
             if let transientReadStates = mutableView.transientReadStates, case let .peer(states) = transientReadStates {
+                print("entries count n:",state.entries.count);
+                
                 for entry in state.entries {
                     if mutableView.namespaces.contains(entry.message.id.namespace) {
                         let read: Bool
@@ -1022,7 +1024,7 @@ public final class MessageHistoryView {
                         }
 //                        print("🌱 entry.message.id.namespace:",entry.message.id.namespace)
                         print("🌱 mutableView loaded entry.message.id:",entry.message.id)
-                        print("🌱 mutableView loaded entry.message.id.peerId:",entry.message.id.peerId)
+                        print("🌱 red:",read)
                         entries.append(MessageHistoryEntry(message: entry.message, isRead: read, location: entry.location, monthLocation: entry.monthLocation, attributes: entry.attributes))
                     }else{
 //                        print("🌱 wrong message namespace:",entry.message.id.namespace)
