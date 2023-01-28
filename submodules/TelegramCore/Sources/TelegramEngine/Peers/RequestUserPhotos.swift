@@ -114,6 +114,7 @@ func _internal_requestPeerPhotos(postbox: Postbox, network: Network, peerId: Pee
                         
                         var renderedMessages: [Message] = []
                         for message in messages {
+                            print("message:",message)
                             if let message = StoreMessage(apiMessage: message, peerIsForum: peer.isForum), let renderedMessage = locallyRenderedMessage(message: message, peers: peers) {
                                 renderedMessages.append(renderedMessage)
                             }

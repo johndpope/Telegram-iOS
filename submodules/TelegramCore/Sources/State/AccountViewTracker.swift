@@ -366,6 +366,7 @@ public final class AccountViewTracker {
     }
     
     private func updatePendingWebpages(viewId: Int32, messageIds: Set<MessageId>, localWebpages: [MessageId: (MediaId, String)]) {
+        print("🛼 updatePendingWebpages messageIds:",messageIds)
         self.queue.async {
             var addedMessageIds: [MessageId] = []
             var removedMessageIds: [MessageId] = []
@@ -452,6 +453,7 @@ public final class AccountViewTracker {
     }
     
     private func updatePolls(viewId: Int32, messageIds: Set<MessageId>, messages: [MessageId: Message]) {
+        print("🛼 updatePolls messageIds:",messageIds)
         let queue = self.queue
         self.queue.async {
             var addedMessageIds: [MessageId] = []
@@ -559,6 +561,7 @@ public final class AccountViewTracker {
     }
     
     private func updateVisibleCallListHoles(viewId: Int32, holeIds: Set<MessageIndex>) {
+        print("🛼 updateVisibleCallListHoles holeIds:",holeIds)
         self.queue.async {
             var addedHoleIds: [MessageIndex] = []
             var removedHoleIds: [MessageIndex] = []
@@ -626,6 +629,7 @@ public final class AccountViewTracker {
     }
     
     func applyMaxReadIncomingMessageIdForReplyInfo(id: MessageId, maxReadIncomingMessageId: MessageId) {
+        print("🛼 applyMaxReadIncomingMessageIdForReplyInfo id:",id)
         self.queue.async {
             if var state = self.updatedViewCountMessageIdsAndTimestamps[id], var result = state.result {
                 result.maxReadIncomingMessageId = maxReadIncomingMessageId
@@ -651,6 +655,7 @@ public final class AccountViewTracker {
     }
     
     public func updateReplyInfoForMessageId(_ id: MessageId, info: UpdatedMessageReplyInfo) {
+        print("🛼 updateReplyInfoForMessageId id:",id)
         self.queue.async { [weak self] in
             guard let strongSelf = self else {
                 return
@@ -663,6 +668,7 @@ public final class AccountViewTracker {
     }
     
     public func updateViewCountForMessageIds(messageIds: Set<MessageId>, clientId: Int32) {
+        print("🛼 updateViewCountForMessageIds id:",messageIds)
         self.queue.async {
             var addedMessageIds: [MessageId] = []
             let updatedState = ViewCountContextState(timestamp: Int32(CFAbsoluteTimeGetCurrent()), clientId: clientId, result: nil)
@@ -675,6 +681,10 @@ public final class AccountViewTracker {
             }
             if !addedMessageIds.isEmpty {
                 for (peerId, messageIds) in messagesIdsGroupedByPeerId(Set(addedMessageIds)) {
+                    
+                    print("🚽  addedMessageIds:",addedMessageIds)
+                    print("🚽  peerId:",peerId)
+                    print("🚽  messageIds:",messageIds)
                     let disposableId = self.nextUpdatedViewCountDisposableId
                     self.nextUpdatedViewCountDisposableId += 1
                     
@@ -818,6 +828,7 @@ public final class AccountViewTracker {
     }
     
     public func updateReactionsForMessageIds(messageIds: Set<MessageId>, force: Bool = false) {
+        print("🛼 updateReactionsForMessageIds messageIds:",messageIds)
         self.queue.async {
             var addedMessageIds: [MessageId] = []
             let timestamp = Int32(CFAbsoluteTimeGetCurrent())
@@ -913,6 +924,7 @@ public final class AccountViewTracker {
     }
     
     public func updateSeenLiveLocationForMessageIds(messageIds: Set<MessageId>) {
+        print("🛼 updateSeenLiveLocationForMessageIds messageIds:",messageIds)
         self.queue.async {
             var addedMessageIds: [MessageId] = []
             let timestamp = Int32(CFAbsoluteTimeGetCurrent())
@@ -968,6 +980,7 @@ public final class AccountViewTracker {
     }
     
     public func updatedExtendedMediaForMessageIds(messageIds: Set<MessageId>) {
+        print("🛼 updatedExtendedMediaForMessageIds messageIds:",messageIds)
         self.queue.async {
             var addedMessageIds: [MessageId] = []
             let timestamp = Int32(CFAbsoluteTimeGetCurrent())
@@ -1222,6 +1235,7 @@ public final class AccountViewTracker {
     }
     
     public func updateMarkAllMentionsSeen(peerId: PeerId, threadId: Int64?) {
+        print("🛼 updateMarkAllMentionsSeen peerId:",peerId)
         self.queue.async {
             guard let account = self.account else {
                 return

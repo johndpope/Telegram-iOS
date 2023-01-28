@@ -245,7 +245,7 @@ class Download: NSObject, MTRequestMessageServiceDelegate {
             }
             
             let data = Api.functions.upload.getFile(flags: 0, location: location, offset: offset, limit: Int32(updatedLength))
-            
+            print("Api.functions.upload.getFile:",location)
             request.setPayload(data.1.makeData() as Data, metadata: WrappedRequestMetadata(metadata: WrappedFunctionDescription(data.0), tag: nil), shortMetadata: WrappedRequestShortMetadata(shortMetadata: WrappedShortFunctionDescription(data.0)), responseParser: { response in
                 if let result = data.2.parse(Buffer(data: response)) {
                     return BoxedMessage(result)
