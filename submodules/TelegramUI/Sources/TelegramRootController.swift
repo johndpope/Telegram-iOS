@@ -17,13 +17,14 @@ import DebugSettingsUI
 import TabBarUI
 import DrawingUI
 import GalleryUI
+import AdUI
 
 public final class TelegramRootController: NavigationController {
     private let context: AccountContext
     
     public var rootTabController: TabBarController?
     
-    public var galleryController: GalleryController? // TODO - make this WEVGalleryPageNode
+    public var galleryController: AdInfoScreen? // TODO - make this WEVGalleryPageNode
     public var contactsController: ContactsController?
     public var callListController: CallListController?
     public var chatListController: ChatListController?
@@ -106,11 +107,8 @@ public final class TelegramRootController: NavigationController {
         
         var controllers: [ViewController] = []
 //        
-//        let galleryController = GalleryController(context: self.context)
-////        contactsController.switchToChatsController = {  [weak self] in
-////            self?.openChatsController(activateSearch: false)
-////        }
-//        controllers.append(galleryController)
+        let galleryController = AdInfoScreen(context: self.context)
+        controllers.append(galleryController)
         
         let contactsController = ContactsController(context: self.context)
         contactsController.switchToChatsController = {  [weak self] in
@@ -144,6 +142,7 @@ public final class TelegramRootController: NavigationController {
                 
         tabBarController.setControllers(controllers, selectedIndex: restoreSettignsController != nil ? (controllers.count - 1) : (controllers.count - 2))
         
+        self.galleryController = galleryController
         self.contactsController = contactsController
         self.callListController = callListController
         self.chatListController = chatListController
@@ -158,6 +157,7 @@ public final class TelegramRootController: NavigationController {
         }
         var controllers: [ViewController] = []
         controllers.append(self.contactsController!)
+        controllers.append(self.galleryController!)
         if showCallsTab {
             controllers.append(self.callListController!)
         }

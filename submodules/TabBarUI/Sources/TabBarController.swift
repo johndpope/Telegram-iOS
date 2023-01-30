@@ -291,6 +291,7 @@ open class TabBarControllerImpl: ViewController, TabBarController {
     
     private func updateSelectedIndex() {
         if !self.isNodeLoaded {
+            print("WARNING - isNodeLoaded is false")
             return
         }
         
@@ -307,9 +308,13 @@ open class TabBarControllerImpl: ViewController, TabBarController {
         
         if let _selectedIndex = self._selectedIndex, _selectedIndex < self.controllers.count {
             self.currentController = self.controllers[_selectedIndex]
+        }else{
+            self._selectedIndex = 0
+            self.currentController = self.controllers[0]
         }
 
         if let currentController = self.currentController {
+            
             currentController.willMove(toParent: self)
             self.tabBarControllerNode.currentControllerNode = currentController.displayNode
             self.addChild(currentController)
@@ -318,8 +323,10 @@ open class TabBarControllerImpl: ViewController, TabBarController {
             currentController.displayNode.recursivelyEnsureDisplaySynchronously(true)
             self.statusBar.statusBarStyle = currentController.statusBar.statusBarStyle
         } else {
+            print("WARNING - no currentControllerNode currentController.displayNode is nil?")
+            
         }
-        
+         
         if let layout = self.validLayout {
             self.containerLayoutUpdated(layout, transition: .immediate)
         }

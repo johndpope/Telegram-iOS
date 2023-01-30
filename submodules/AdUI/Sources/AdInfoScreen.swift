@@ -191,10 +191,20 @@ public final class AdInfoScreen: ViewController {
 
         super.init(navigationBarPresentationData: NavigationBarPresentationData(presentationData: self.presentationData))
 
-        self.navigationPresentation = .modal
+       self.navigationPresentation = .modal
 
         self.navigationItem.setLeftBarButton(UIBarButtonItem(title: "", style: .plain, target: self, action: #selector(self.noAction)), animated: false)
         self.navigationItem.setRightBarButton(UIBarButtonItem(title: self.presentationData.strings.Common_Done, style: .done, target: self, action: #selector(self.donePressed)), animated: false)
+        
+        self.tabBarItem.title = self.presentationData.strings.Contacts_Title
+        
+        let icon = UIImage(bundleImageName: "Chat List/Tabs/IconContacts")
+        
+        self.tabBarItem.image = icon
+        self.tabBarItem.selectedImage = icon
+        if !self.presentationData.reduceMotion {
+            self.tabBarItem.animationName = "TabContacts"
+        }
     }
 
     required init(coder aDecoder: NSCoder) {
