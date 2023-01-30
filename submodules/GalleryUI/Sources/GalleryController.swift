@@ -430,6 +430,18 @@ public class GalleryController: ViewController, StandalonePresentableController,
         let backItem = UIBarButtonItem(backButtonAppearanceWithTitle: presentationData.strings.Common_Back, target: self, action: #selector(self.donePressed))
         self.navigationItem.leftBarButtonItem = backItem
         
+        // JP - added these to attempt to get vc to present from tab bar
+        self.tabBarItem.title = self.presentationData.strings.Contacts_Title
+        
+        let icon = UIImage(bundleImageName: "Chat List/Tabs/IconContacts")
+        
+        self.tabBarItem.image = icon
+        self.tabBarItem.selectedImage = icon
+        if !self.presentationData.reduceMotion {
+            self.tabBarItem.animationName = "TabContacts"
+        }
+        
+        
         self.statusBar.statusBarStyle = .White
         
         let message: Signal<Message?, NoError>
@@ -451,6 +463,7 @@ public class GalleryController: ViewController, StandalonePresentableController,
         |> filter({ $0 != nil })
         |> mapToSignal { message -> Signal<GalleryMessageHistoryView?, NoError> in
             switch source {
+                
                 case let .peerMessagesAtId(_, chatLocation, chatLocationContextHolder):
                     if let tags = tagsForMessage(message!) {
                         let namespaces: MessageIdNamespaces
@@ -1078,10 +1091,10 @@ public class GalleryController: ViewController, StandalonePresentableController,
             }
             return nil
         }
-        self.galleryNode.dismiss = { [weak self] in
-            self?._hiddenMedia.set(.single(nil))
-            self?.presentingViewController?.dismiss(animated: false, completion: nil)
-        }
+//        self.galleryNode.dismiss = { [weak self] in
+//            self?._hiddenMedia.set(.single(nil))
+//            self?.presentingViewController?.dismiss(animated: false, completion: nil)
+//        }
         
         self.galleryNode.beginCustomDismiss = { [weak self] simpleAnimation in
             if let strongSelf = self {

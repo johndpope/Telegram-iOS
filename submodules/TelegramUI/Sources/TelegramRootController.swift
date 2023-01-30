@@ -24,7 +24,7 @@ public final class TelegramRootController: NavigationController {
     
     public var rootTabController: TabBarController?
     
-    public var galleryController: AdInfoScreen? // TODO - make this WEVGalleryPageNode
+    public var dummyController: DummyScreen? // TODO - make this WEVGalleryPageNode
     public var contactsController: ContactsController?
     public var callListController: CallListController?
     public var chatListController: ChatListController?
@@ -107,14 +107,19 @@ public final class TelegramRootController: NavigationController {
         
         var controllers: [ViewController] = []
 //        
-        let galleryController = AdInfoScreen(context: self.context)
-        controllers.append(galleryController)
+  
+
         
         let contactsController = ContactsController(context: self.context)
         contactsController.switchToChatsController = {  [weak self] in
             self?.openChatsController(activateSearch: false)
         }
         controllers.append(contactsController)
+        
+        
+        let dummyController = DummyScreen(context: self.context)
+        controllers.append(dummyController)
+
         
         if showCallsTab {
             controllers.append(callListController)
@@ -142,13 +147,18 @@ public final class TelegramRootController: NavigationController {
                 
         tabBarController.setControllers(controllers, selectedIndex: restoreSettignsController != nil ? (controllers.count - 1) : (controllers.count - 2))
         
-        self.galleryController = galleryController
+        self.dummyController = dummyController
         self.contactsController = contactsController
         self.callListController = callListController
         self.chatListController = chatListController
         self.accountSettingsController = accountSettingsController
+        
         self.rootTabController = tabBarController
         self.pushViewController(tabBarController, animated: false)
+
+     
+        
+
     }
         
     public func updateRootControllers(showCallsTab: Bool) {
@@ -156,8 +166,9 @@ public final class TelegramRootController: NavigationController {
             return
         }
         var controllers: [ViewController] = []
+        controllers.append(self.dummyController!)
         controllers.append(self.contactsController!)
-        controllers.append(self.galleryController!)
+      
         if showCallsTab {
             controllers.append(self.callListController!)
         }

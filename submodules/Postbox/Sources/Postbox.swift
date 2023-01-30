@@ -271,6 +271,7 @@ public final class Transaction {
     
     public func getPeerChatState(_ id: PeerId) -> PeerChatState? {
         assert(!self.disposed)
+        print("DB-> getPeerChatState:PeerId",id)
         return self.postbox?.peerChatStateTable.get(id)?.getLegacy() as? PeerChatState
     }
     
