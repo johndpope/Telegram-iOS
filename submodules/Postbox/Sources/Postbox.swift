@@ -3012,8 +3012,9 @@ final class PostboxImpl {
     }
 
     
-    public func messageForPeerId(peerId: PeerId,threadId: Int64?,  additionalData: [AdditionalMessageHistoryViewData]) -> MessageHistoryView {
+    public func messageForPeerId(_ peerId: PeerId) -> MessageHistoryView {
         
+        let threadId: Int64? = nil
         let ignoreMessagesInTimestampRange:ClosedRange<Int32>? = nil
         let clipHoles = true
         let anchor:HistoryViewInputAnchor = .upperBound

@@ -466,7 +466,7 @@ public class GalleryController: ViewController, StandalonePresentableController,
                 
                 case let .peerMessagesAtId(_, chatLocation, chatLocationContextHolder):
                     if let tags = tagsForMessage(message!) {
-                        let namespaces: MessageIdNamespaces
+                        let namespaces: MessageIdNamespaces 
                         if Namespaces.Message.allScheduled.contains(message!.id.namespace) {
                             namespaces = .just(Namespaces.Message.allScheduled)
                         } else {

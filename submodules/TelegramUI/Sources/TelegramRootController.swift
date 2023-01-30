@@ -106,10 +106,7 @@ public final class TelegramRootController: NavigationController {
         let callListController = CallListController(context: self.context, mode: .tab)
         
         var controllers: [ViewController] = []
-//        
-  
 
-        
         let contactsController = ContactsController(context: self.context)
         contactsController.switchToChatsController = {  [weak self] in
             self?.openChatsController(activateSearch: false)
