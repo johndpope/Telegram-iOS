@@ -320,7 +320,7 @@ private func mappedInsertEntries(context: AccountContext, nodeInteraction: ChatL
             case let .PeerEntry(peerEntry):
                 let index = peerEntry.index
                 let presentationData = peerEntry.presentationData
-                let combinedReadState = peerEntry.readState
+                let combinedReadState = peerEntry.readState //PeerEntryData
                 let isRemovedFromTotalUnreadCount = peerEntry.isRemovedFromTotalUnreadCount
                 let draftState = peerEntry.draftState
                 let peer = peerEntry.peer
@@ -341,39 +341,49 @@ private func mappedInsertEntries(context: AccountContext, nodeInteraction: ChatL
             
                 switch mode {
                     case .chatList:
-                        return ListViewInsertItem(index: entry.index, previousIndex: entry.previousIndex, item: ChatListItem(
-                            presentationData: presentationData,
-                            context: context,
-                            chatListLocation: location,
-                            filterData: filterData,
-                            index: index,
-                            content: .peer(ChatListItemContent.PeerData(
-                                messages: peerEntry.messages,
-                                peer: peer,
-                                threadInfo: threadInfo,
-                                combinedReadState: combinedReadState,
-                                isRemovedFromTotalUnreadCount: isRemovedFromTotalUnreadCount,
-                                presence: presence,
-                                hasUnseenMentions: hasUnseenMentions,
-                                hasUnseenReactions: hasUnseenReactions,
-                                draftState: draftState,
-                                inputActivities: inputActivities,
-                                promoInfo: promoInfo,
-                                ignoreUnreadBadge: false,
-                                displayAsMessage: false,
-                                hasFailedMessages: hasFailedMessages,
-                                forumTopicData: forumTopicData,
-                                topForumTopicItems: topForumTopicItems,
-                                autoremoveTimeout: peerEntry.autoremoveTimeout
-                            )),
-                            editing: editing,
-                            hasActiveRevealControls: hasActiveRevealControls,
-                            selected: selected,
-                            header: nil,
-                            enableContextActions: true,
-                            hiddenOffset: threadInfo?.isHidden == true && !revealed,
-                            interaction: nodeInteraction
-                        ), directionHint: entry.directionHint)
+                    let peerData =  ChatListItemContent.peer(ChatListItemContent.PeerData(
+                        messages: peerEntry.messages,
+                        peer: peer,
+                        threadInfo: threadInfo,
+                        combinedReadState: combinedReadState,
+                        isRemovedFromTotalUnreadCount: isRemovedFromTotalUnreadCount,
+                        presence: presence,
+                        hasUnseenMentions: hasUnseenMentions,
+                        hasUnseenReactions: hasUnseenReactions,
+                        draftState: draftState,
+                        inputActivities: inputActivities,
+                        promoInfo: promoInfo,
+                        ignoreUnreadBadge: false,
+                        displayAsMessage: false,
+                        hasFailedMessages: hasFailedMessages,
+                        forumTopicData: forumTopicData,
+                        topForumTopicItems: topForumTopicItems,
+                        autoremoveTimeout: peerEntry.autoremoveTimeout
+                    ))
+                    let chatListViewItem = ChatListItem(
+                        presentationData: presentationData,
+                        context: context,
+                        chatListLocation: location,
+                        filterData: filterData,
+                        index: index,
+                        content: peerData,
+                        editing: editing,
+                        hasActiveRevealControls: hasActiveRevealControls,
+                        selected: selected,
+                        header: nil,
+                        enableContextActions: true,
+                        hiddenOffset: threadInfo?.isHidden == true && !revealed,
+                        interaction: nodeInteraction
+                    )
+                    let chatItem =  ListViewInsertItem(index: entry.index, previousIndex: entry.previousIndex, item: chatListViewItem, directionHint: entry.directionHint)
+                    print("🍒  chatListViewItem:",chatListViewItem)
+                    print("🍒  peerData:",peerData)
+                    print("🍒  peerEntry.messages:",peerEntry.messages)
+                    print("🍒  combinedReadState:",combinedReadState ?? "")
+                    
+                    
+                    
+                    return chatItem
                     case let .peers(filter, isSelecting, _, filters, displayAutoremoveTimeout):
                         let itemPeer = peer.chatMainPeer
                         var chatPeer: EnginePeer?
@@ -1263,6 +1273,7 @@ public final class ChatListNode: ListView {
         
         let viewProcessingQueue = self.viewProcessingQueue
         
+        print("BEGIN")
         let chatListViewUpdate = self.chatListLocation.get()
         |> distinctUntilChanged
         |> mapToSignal { listLocation -> Signal<(ChatListNodeViewUpdate, ChatListFilter?), NoError> in
@@ -1271,6 +1282,9 @@ public final class ChatListNode: ListView {
                 return (update, listLocation.filter)
             }
         }
+        
+        print("END")
+        
         
         let previousState = Atomic<ChatListNodeState>(value: self.currentState)
         let previousView = Atomic<ChatListNodeView?>(value: nil)

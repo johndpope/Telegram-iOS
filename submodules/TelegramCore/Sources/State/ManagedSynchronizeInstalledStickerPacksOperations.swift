@@ -88,6 +88,7 @@ func managedSynchronizeInstalledStickerPacksOperations(postbox: Postbox, network
             }
             
             for (entry, disposable) in beginOperations {
+                print("managedSynchronizeInstalledStickerPacksOperations")
                 let signal = withTakenOperation(postbox: postbox, peerId: entry.peerId, tag: tag, tagLocalIndex: entry.tagLocalIndex, { transaction, entry -> Signal<Void, NoError> in
                     if let entry = entry {
                         if let operation = entry.contents as? SynchronizeInstalledStickerPacksOperation {

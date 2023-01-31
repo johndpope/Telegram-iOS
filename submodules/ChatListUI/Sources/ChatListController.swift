@@ -2660,7 +2660,7 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
                     })
                 }
                 
-                if let searchContentNode = strongSelf.searchContentNode {                    
+                if let searchContentNode = strongSelf.searchContentNode {
                     if let filterContainerNodeAndActivate = strongSelf.chatListDisplayNode.activateSearch(placeholderNode: searchContentNode.placeholderNode, displaySearchFilters: displaySearchFilters, hasDownloads: strongSelf.hasDownloads, initialFilter: filter, navigationController: strongSelf.navigationController as? NavigationController) {
                         let (filterContainerNode, activate) = filterContainerNodeAndActivate
                         if displaySearchFilters {
@@ -4138,7 +4138,7 @@ private final class ChatListHeaderBarContextExtractedContentSource: ContextExtra
     }
 }
 
-private final class ChatListContextLocationContentSource: ContextLocationContentSource {    
+private final class ChatListContextLocationContentSource: ContextLocationContentSource {
     private let controller: ViewController
     private let location: CGPoint
     
@@ -4284,7 +4284,7 @@ private final class ChatListLocationContext {
                 self.didSetReady = true
                 self.ready.set(.single(true))
             }
-        case let .forum(peerId):     
+        case let .forum(peerId):
             let peerView = Promise<PeerView>()
             peerView.set(context.account.viewTracker.peerView(peerId))
             

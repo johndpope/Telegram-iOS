@@ -399,47 +399,44 @@ public final class DummyScreen: ViewController {
         super.viewDidAppear(animated)
         
         
-        let lauraAboliPeerId = PeerId.Id._internalFromInt64Value(1375690723)
+        let lauraAboliPeerId = PeerId.Id._internalFromInt64Value(1479202492) //1479202492 // 1375690723
         let peerId = PeerId(namespace: Namespaces.Peer.CloudChannel, id:lauraAboliPeerId)
-  
-        let chatLocation: NavigateToChatControllerParams.Location
-        let title = "3D to 5D Consciousness"
-        let role: TelegramGroupRole = .member
-        let migrationReference: TelegramGroupToChannelMigrationReference? = nil
-        let creationDate: Int32 = 0
-        let version: Int = 1
-        
+//
+//        let chatLocation: NavigateToChatControllerParams.Location
+//        let title = "3D to 5D Consciousness"
+//        let role: TelegramGroupRole = .member
+//        let migrationReference: TelegramGroupToChannelMigrationReference? = nil
+//        let creationDate: Int32 = 0
+//        let version: Int = 1
+//        
 
     
-        let message = self.context.account.postbox.messageForPeerId(peerId) 
-        print("message:",message)
+        let result:[(threadId: Int64, index: MessageIndex, info: StoredMessageHistoryThreadInfo)] = self.context.account.postbox.summaryForPeerId(peerId)
+        print("result:",result)
         
-//
-//        let threads = unreadThreadList(context: context, peerId: peerId).start()
-//
-//        print("threads:",threads)
-        
+//        let test  = self.context.account.postbox.messageForPeerId(peerId)
+//        print("test:",test)
         
         
         // JP - hardcode a group here - they all go to Laura Aboli
-     
-        let myChannel =    TelegramGroup(id: peerId, title: title, photo: [], participantCount: Int(0), role: role, membership:TelegramGroupMembership.Member, flags: []   , defaultBannedRights: nil, migrationReference: migrationReference, creationDate: creationDate, version: Int(version))
-//                             chatLocation = .peer(peer)
-        chatLocation = .peer(EnginePeer(myChannel)) //  🪶  peer - channel : <TelegramChannel: 0x600003dc2490>
-
-
-        let message = Message(stableId: 0, stableVersion: 0, id: MessageId(peerId: chatLocation.peerId, namespace: 0, id: 0_30728), globallyUniqueId: nil, groupingKey: nil, groupInfo: nil, threadId: nil, timestamp: 0, flags: [], tags: [], globalTags: [], localTags: [], forwardInfo: nil, author: nil, text: "", attributes: [], media: [], peers: SimpleDictionary(), associatedMessages: SimpleDictionary(), associatedMessageIds: [], associatedMedia: [:], associatedThreadInfo: nil)
-        
-//                            let source = GalleryControllerItemSource.standaloneMessage(message)
-                let source = GalleryControllerItemSource.peerMessagesAtId(messageId: message.id, chatLocation: .peer(id: message.id.peerId), chatLocationContextHolder: Atomic<ChatLocationContextHolder?>(value: nil))
-        let gallery = GalleryController(context: self.context, source: source, playbackRate: 1.00, replaceRootController: { controller, ready in
-            //                                    if let baseNavigationController = baseNavigationController {
-            //                                        baseNavigationController.replaceTopController(controller, animated: false, ready: ready)
-            //                                    }
-        }, baseNavigationController: nil)
-//        controllers.append(gallery)
-       let level = PresentationSurfaceLevel(rawValue:0)
-       self.context.sharedContext.mainWindow?.present(gallery, on: level, blockInteraction: true, completion: {})
+//
+//        let myChannel =    TelegramGroup(id: peerId, title: title, photo: [], participantCount: Int(0), role: role, membership:TelegramGroupMembership.Member, flags: []   , defaultBannedRights: nil, migrationReference: migrationReference, creationDate: creationDate, version: Int(version))
+////                             chatLocation = .peer(peer)
+//        chatLocation = .peer(EnginePeer(myChannel)) //  🪶  peer - channel : <TelegramChannel: 0x600003dc2490>
+//
+//
+//        let message = Message(stableId: 0, stableVersion: 0, id: MessageId(peerId: chatLocation.peerId, namespace: 0, id: 0_30728), globallyUniqueId: nil, groupingKey: nil, groupInfo: nil, threadId: nil, timestamp: 0, flags: [], tags: [], globalTags: [], localTags: [], forwardInfo: nil, author: nil, text: "", attributes: [], media: [], peers: SimpleDictionary(), associatedMessages: SimpleDictionary(), associatedMessageIds: [], associatedMedia: [:], associatedThreadInfo: nil)
+//
+////                            let source = GalleryControllerItemSource.standaloneMessage(message)
+//                let source = GalleryControllerItemSource.peerMessagesAtId(messageId: message.id, chatLocation: .peer(id: message.id.peerId), chatLocationContextHolder: Atomic<ChatLocationContextHolder?>(value: nil))
+//        let gallery = GalleryController(context: self.context, source: source, playbackRate: 1.00, replaceRootController: { controller, ready in
+//            //                                    if let baseNavigationController = baseNavigationController {
+//            //                                        baseNavigationController.replaceTopController(controller, animated: false, ready: ready)
+//            //                                    }
+//        }, baseNavigationController: nil)
+////        controllers.append(gallery)
+//       let level = PresentationSurfaceLevel(rawValue:0)
+//       self.context.sharedContext.mainWindow?.present(gallery, on: level, blockInteraction: true, completion: {})
     }
     private var node: Node {
         return self.displayNode as! Node

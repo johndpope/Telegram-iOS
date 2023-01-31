@@ -103,7 +103,7 @@ class MessageHistoryThreadReverseIndexTable: Table {
     }
 }
 
-class MessageHistoryThreadIndexTable: Table {
+public class MessageHistoryThreadIndexTable: Table {
     static func tableSpec(_ id: Int32) -> ValueBoxTable {
         return ValueBoxTable(id: id, keyType: .binary, compactValuesOnCreation: true)
     }
@@ -291,7 +291,7 @@ class MessageHistoryThreadIndexTable: Table {
         return result
     }
     
-    override func beforeCommit() {
+    public override func beforeCommit() {
         super.beforeCommit()
         
         self.updatedInfoItems.removeAll()

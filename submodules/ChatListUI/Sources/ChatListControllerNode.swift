@@ -703,7 +703,7 @@ final class ChatListContainerNode: ASDisplayNode, UIGestureRecognizerDelegate {
         
         super.init()
         
-        self.backgroundColor = presentationData.theme.chatList.backgroundColor
+        self.backgroundColor = .clear //presentationData.theme.chatList.backgroundColor
         
         let itemNode = ChatListContainerItemNode(context: self.context, location: self.location, filter: nil, previewing: self.previewing, isInlineMode: self.isInlineMode, controlsHistoryPreload: self.controlsHistoryPreload, presentationData: presentationData, animationCache: self.animationCache, animationRenderer: self.animationRenderer, becameEmpty: { [weak self] filter in
             self?.filterBecameEmpty(filter)
@@ -1266,7 +1266,9 @@ final class ChatListControllerNode: ASDisplayNode, UIGestureRecognizerDelegate {
             return UITracingLayerView()
         })
         
-        self.backgroundColor = presentationData.theme.chatList.backgroundColor
+        self.backgroundColor = UIColor.purple
+//            self.backgroundColor = UIColor.red
+//        self.backgroundColor = presentationData.theme.chatList.backgroundColor
         
         self.addSubnode(self.mainContainerNode)
         

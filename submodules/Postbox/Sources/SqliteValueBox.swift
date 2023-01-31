@@ -732,6 +732,8 @@ public final class SqliteValueBox: ValueBox {
             resultStatement = statement
         } else {
             var statement: OpaquePointer? = nil
+           print("table.id:",table.id)
+            print("key:",key)
             let status = sqlite3_prepare_v3(self.database.handle, "SELECT value FROM t\(table.id) WHERE key=?", -1, SQLITE_PREPARE_PERSISTENT, &statement, nil)
             precondition(status == SQLITE_OK)
             let preparedStatement = SqlitePreparedStatement(statement: statement)
@@ -748,6 +750,7 @@ public final class SqliteValueBox: ValueBox {
                 resultStatement.bind(1, number: key.getInt64(0))
         }
         
+        print("resultStatement:",resultStatement.statement?.debugDescription ?? "")
         return resultStatement
     }
     
@@ -761,6 +764,8 @@ public final class SqliteValueBox: ValueBox {
             resultStatement = statement
         } else {
             var statement: OpaquePointer? = nil
+            print("table.id:",table.id)
+             print("key:",key)
             let status = sqlite3_prepare_v3(self.database.handle, "SELECT rowid FROM t\(table.id) WHERE key=?", -1, SQLITE_PREPARE_PERSISTENT, &statement, nil)
             precondition(status == SQLITE_OK)
             let preparedStatement = SqlitePreparedStatement(statement: statement)
@@ -776,7 +781,7 @@ public final class SqliteValueBox: ValueBox {
             case .int64:
                 resultStatement.bind(1, number: key.getInt64(0))
         }
-        
+        print("resultStatement:",resultStatement.statement?.debugDescription ?? "")
         return resultStatement
     }
     

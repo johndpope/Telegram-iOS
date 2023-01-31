@@ -3012,6 +3012,13 @@ final class PostboxImpl {
     }
 
     
+    public func summaryForPeerId(_ peerId: PeerId)->[(threadId: Int64, index: MessageIndex, info: StoredMessageHistoryThreadInfo)] {
+
+       let items = self.messageHistoryThreadIndexTable.fetch(peerId: peerId, namespace: 0, start: MessageHistoryThreadIndexTable.IndexBoundary.upperBound, end: MessageHistoryThreadIndexTable.IndexBoundary.lowerBound, limit: 10000)
+        return items
+      
+    }
+    
     public func messageForPeerId(_ peerId: PeerId) -> MessageHistoryView {
         
         let threadId: Int64? = nil
@@ -4028,6 +4035,21 @@ public class Postbox {
             return impl.keychainEntryForKey(key)
         }
     }
+    
+    public func  messageForPeerId(_ peerId: PeerId) -> MessageHistoryView? {
+        return self.impl.syncWith { impl -> MessageHistoryView? in
+            return impl.messageForPeerId(peerId)
+        }
+    }
+
+    
+    public func  summaryForPeerId(_ peerId: PeerId)-> [(threadId: Int64, index: MessageIndex, info: StoredMessageHistoryThreadInfo)] {
+        
+        return self.impl.syncWith { impl -> [(threadId: Int64, index: MessageIndex, info: StoredMessageHistoryThreadInfo)] in
+          return impl.summaryForPeerId(peerId)
+        }
+
+    }
 
     public func setKeychainEntryForKey(_ key: String, value: Data) {
         self.impl.with { impl in
@@ -4059,6 +4081,7 @@ public class Postbox {
     }
 
     public func transaction<T>(userInteractive: Bool = false, ignoreDisabled: Bool = false, _ f: @escaping(Transaction) -> T) -> Signal<T, NoError> {
+        print("postbox transaction:",String(describing: T.self))
         return Signal<T, NoError> { subscriber in
             let disposable = MetaDisposable()
 

@@ -382,6 +382,7 @@ private func offsetPinnedIndex(_ index: EngineChatList.Item.Index, offset: UInt1
 }
 
 func chatListNodeEntriesForView(_ view: EngineChatList, state: ChatListNodeState, savedMessagesPeer: EnginePeer?, foundPeers: [(EnginePeer, EnginePeer?)], hideArchivedFolderByDefault: Bool, displayArchiveIntro: Bool, mode: ChatListNodeMode, chatListLocation: ChatListControllerLocation) -> (entries: [ChatListNodeEntry], loading: Bool) {
+    print("chatListNodeEntriesForView")
     var result: [ChatListNodeEntry] = []
     
     var pinnedIndexOffset: UInt16 = 0
@@ -430,6 +431,7 @@ func chatListNodeEntriesForView(_ view: EngineChatList, state: ChatListNodeState
         }
         var updatedMessages = entry.messages
         var updatedCombinedReadState = entry.readCounters
+        print("🍒 readCounters",updatedCombinedReadState ?? "")
         if let peerId = peerId, state.pendingClearHistoryPeerIds.contains(ChatListNodeState.ItemId(peerId: peerId, threadId: threadId)) {
             updatedMessages = []
             updatedCombinedReadState = nil
@@ -485,7 +487,7 @@ func chatListNodeEntriesForView(_ view: EngineChatList, state: ChatListNodeState
             topForumTopicItems: entry.topForumTopicItems,
             revealed: threadId == 1 && (state.hiddenItemShouldBeTemporaryRevealed || state.editing)
         ))
-        
+        print("🍒 entry:",entry)
         if let threadInfo, threadInfo.isHidden {
             hiddenGeneralThread = entry
         } else {

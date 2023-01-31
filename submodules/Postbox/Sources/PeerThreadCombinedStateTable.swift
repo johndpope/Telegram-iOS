@@ -225,7 +225,10 @@ class PeerThreadsSummaryTable: Table {
         }
     }
     
+    
     func update(peerIds: Set<PeerId>, indexTable: MessageHistoryThreadIndexTable, combinedStateTable: PeerThreadCombinedStateTable, tagsSummaryTable: MessageHistoryTagsSummaryTable) -> [PeerId: StoredPeerThreadsSummary] {
+
+        
         var updatedInitialSummaries: [PeerId: StoredPeerThreadsSummary] = [:]
         
         for peerId in peerIds {
