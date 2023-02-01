@@ -4144,7 +4144,7 @@ public class Postbox {
         })
     }
     
-    public func postboxTransaction() -> Transaction{
+    public func forcedTransaction() -> Transaction{
         return self.impl.syncWith { impl -> Transaction in
             return impl.postboxTransaction()
         }

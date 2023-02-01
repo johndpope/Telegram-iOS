@@ -403,43 +403,19 @@ public final class DummyScreen: ViewController {
         let peerId = PeerId(namespace: Namespaces.Peer.CloudChannel, id:lauraAboliPeerId)
 
 
-        let postbox = context.account.postbox
-        let test = postbox.postboxTransaction().getPeerReadStates(peerId)
-        
-//        let results = context.account.postbox.forcedTransaction( )
-        print("test:",test ?? "")
-//        { transaction -> (MessageId.Namespace, PeerReadState)? in
-//            if let readStates = transaction.getPeerReadStates(peerId) {
-//                for (namespace, readState) in readStates {
-//                    if namespace == Namespaces.Message.Cloud || namespace == Namespaces.Message.SecretIncoming {
-//                        return (namespace, readState)
-//                    }
-//                }
-//            }
-//        }
+        var maxReadId:Int32 = 0
+        let transaction = context.account.postbox.forcedTransaction()
+        if let readStates = transaction.getPeerReadStates(peerId){
+            for (namespace, readState) in readStates {
+                if namespace == Namespaces.Message.Cloud || namespace == Namespaces.Message.SecretIncoming {
+                    if case let .idBased(maxIncomingReadId, _, _, _, _) = readState {
+                        maxReadId = maxIncomingReadId
+                    }
+                }
+            }
+        }
 
-        
-        //
-//
-//
-//
-//
-//                let chatLocation = ChatLocation.peer(id: peerId)
-//                let anchor =  HistoryViewInputAnchor.upperBound // latest messages
-//                let contextHolder: Atomic<ChatLocationContextHolder?> =
-//                let viewLocation = context.chatLocationInput(for: chatLocation, contextHolder:contextHolder)
-//
-//                print("🍭  anchor",anchor)
-//
-//                let signal =  context.account.postbox.aroundMessageHistoryViewForLocation(viewLocation, anchor: anchor, ignoreMessagesInTimestampRange: nil, count: 50, clipHoles: false, fixedCombinedReadStates: nil, topTaggedMessageIdNamespaces: [], tagMask: [], appendMessagesFromTheSameGroup: false, namespaces: 0, orderStatistics: [.combinedLocation])
-//                |> mapToSignal { (view, _, _) -> Signal<GalleryMessageHistoryView?, NoError> in
-//                    let mapped = GalleryMessageHistoryView.view(view)
-//                    return .single(mapped)
-//                }
-//
-        
-//
-        /*let chatLocation: NavigateToChatControllerParams.Location
+        let chatLocation: NavigateToChatControllerParams.Location
         let title = "3D to 5D Consciousness"
         let role: TelegramGroupRole = .member
         let migrationReference: TelegramGroupToChannelMigrationReference? = nil
@@ -447,22 +423,12 @@ public final class DummyScreen: ViewController {
         let version: Int = 1
         
 
-    
-        let result:[(threadId: Int64, index: MessageIndex, info: StoredMessageHistoryThreadInfo)] = self.context.account.postbox.summaryForPeerId(peerId)
-        print("result:",result)
-        
-//        let test  = self.context.account.postbox.messageForPeerId(peerId)
-//        print("test:",test)
-        
-        
-        // JP - hardcode a group here - they all go to Laura Aboli
-//
         let myChannel =    TelegramGroup(id: peerId, title: title, photo: [], participantCount: Int(0), role: role, membership:TelegramGroupMembership.Member, flags: []   , defaultBannedRights: nil, migrationReference: migrationReference, creationDate: creationDate, version: Int(version))
 //                             chatLocation = .peer(peer)
         chatLocation = .peer(EnginePeer(myChannel)) //  🪶  peer - channel : <TelegramChannel: 0x600003dc2490>
 
 
-        let message = Message(stableId: 0, stableVersion: 0, id: MessageId(peerId: chatLocation.peerId, namespace: 0, id: 0_30728), globallyUniqueId: nil, groupingKey: nil, groupInfo: nil, threadId: nil, timestamp: 0, flags: [], tags: [], globalTags: [], localTags: [], forwardInfo: nil, author: nil, text: "", attributes: [], media: [], peers: SimpleDictionary(), associatedMessages: SimpleDictionary(), associatedMessageIds: [], associatedMedia: [:], associatedThreadInfo: nil)
+        let message = Message(stableId: 0, stableVersion: 0, id: MessageId(peerId: chatLocation.peerId, namespace: 0, id: maxReadId), globallyUniqueId: nil, groupingKey: nil, groupInfo: nil, threadId: nil, timestamp: 0, flags: [], tags: [], globalTags: [], localTags: [], forwardInfo: nil, author: nil, text: "", attributes: [], media: [], peers: SimpleDictionary(), associatedMessages: SimpleDictionary(), associatedMessageIds: [], associatedMedia: [:], associatedThreadInfo: nil)
 
 //                            let source = GalleryControllerItemSource.standaloneMessage(message)
                 let source = GalleryControllerItemSource.peerMessagesAtId(messageId: message.id, chatLocation: .peer(id: message.id.peerId), chatLocationContextHolder: Atomic<ChatLocationContextHolder?>(value: nil))
@@ -473,7 +439,7 @@ public final class DummyScreen: ViewController {
         }, baseNavigationController: nil)
 //        controllers.append(gallery)
        let level = PresentationSurfaceLevel(rawValue:0)
-       self.context.sharedContext.mainWindow?.present(gallery, on: level, blockInteraction: true, completion: {})*/
+       self.context.sharedContext.mainWindow?.present(gallery, on: level, blockInteraction: true, completion: {})
     }
     private var node: Node {
         return self.displayNode as! Node
