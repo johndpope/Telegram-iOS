@@ -395,36 +395,28 @@ public final class DummyScreen: ViewController {
         }
     }
     
-    func initialStateWithDifference(postbox: Postbox, difference: Api.updates.Difference) -> Signal<AccountMutableState, NoError> {
-        return postbox.transaction { transaction -> AccountMutableState in
-            let peerIds = peerIdsFromDifference(difference)
-            let activeChannelIds = activeChannelsFromDifference(difference)
-            let associatedMessageIds = associatedMessageIdsFromDifference(difference)
-            let peerIdsRequiringLocalChatState = peerIdsRequiringLocalChatStateFromDifference(difference)
-            return initialStateWithPeerIds(transaction, peerIds: peerIds, activeChannelIds: activeChannelIds, referencedReplyMessageIds: associatedMessageIds.replyIds, referencedGeneralMessageIds: associatedMessageIds.generalIds, peerIdsRequiringLocalChatState: peerIdsRequiringLocalChatState, locallyGeneratedMessageTimestamps: locallyGeneratedMessageTimestampsFromDifference(difference))
-        }
-    }
+
     
     public override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         
-        
-        let lauraAboliPeerId = PeerId.Id._internalFromInt64Value(1375690723) //1479202492 // 1375690723 847052656
-        let peerId = PeerId(namespace: Namespaces.Peer.CloudChannel, id:lauraAboliPeerId)
+//
+//        let lauraAboliPeerId = PeerId.Id._internalFromInt64Value(1375690723) //1479202492 // 1375690723 847052656
+//        let peerId = PeerId(namespace: Namespaces.Peer.CloudChannel, id:lauraAboliPeerId)
 
 
   
-            
-        let signal = context.account.postbox.transaction { transaction -> (MessageId.Namespace, PeerReadState)? in
-            if let readStates = transaction.getPeerReadStates(peerId) {
-                for (namespace, readState) in readStates {
-                    if namespace == Namespaces.Message.Cloud || namespace == Namespaces.Message.SecretIncoming {
-                        return (namespace, readState)
-                    }
-                }
-            }
-            return nil
-        }
+//
+//        let signal = context.account.postbox.transaction { transaction -> (MessageId.Namespace, PeerReadState)? in
+//            if let readStates = transaction.getPeerReadStates(peerId) {
+//                for (namespace, readState) in readStates {
+//                    if namespace == Namespaces.Message.Cloud || namespace == Namespaces.Message.SecretIncoming {
+//                        return (namespace, readState)
+//                    }
+//                }
+//            }
+//            return nil
+//        }
        
         
 //
