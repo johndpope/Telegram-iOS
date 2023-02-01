@@ -536,7 +536,7 @@ public extension EngineChatList {
             switch entry {
             case .MessageEntry:
                 if let item = EngineChatList.Item(entry) {
-                    print("EngineChatList.Item:",item)
+//                    print("EngineChatList.Item:",item)
                     items.append(item)
                 }
             case .HoleEntry:
