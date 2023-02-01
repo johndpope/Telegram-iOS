@@ -485,9 +485,7 @@ public final class DummyScreen: ViewController {
     }
 
     override public func loadDisplayNode() {
-//        self.displayNode = Node(controller: self, context: self.context)
-        self.galleryController!.loadDisplayNode()
-        self.displayNode = self.galleryController!.displayNode
+        self.displayNode = Node(controller: self, context: self.context)
 
         super.displayNodeDidLoad()
     }
