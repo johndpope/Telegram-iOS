@@ -738,6 +738,7 @@ public final class SqliteValueBox: ValueBox {
             precondition(status == SQLITE_OK)
             let preparedStatement = SqlitePreparedStatement(statement: statement)
             self.getStatements[table.id] = preparedStatement
+            print("preparedStatement:",preparedStatement.statement ?? "")
             resultStatement =  preparedStatement
         }
         
@@ -750,7 +751,7 @@ public final class SqliteValueBox: ValueBox {
                 resultStatement.bind(1, number: key.getInt64(0))
         }
         
-        print("resultStatement:",resultStatement.statement?.debugDescription ?? "")
+  
         return resultStatement
     }
     
@@ -768,7 +769,8 @@ public final class SqliteValueBox: ValueBox {
              print("key:",key)
             let status = sqlite3_prepare_v3(self.database.handle, "SELECT rowid FROM t\(table.id) WHERE key=?", -1, SQLITE_PREPARE_PERSISTENT, &statement, nil)
             precondition(status == SQLITE_OK)
-            let preparedStatement = SqlitePreparedStatement(statement: statement)
+            let preparedStatement = SqlitePreparedStatement(statement: statement )
+            print("preparedStatement:",preparedStatement.statement ?? "")
             self.getRowIdStatements[table.id] = preparedStatement
             resultStatement =  preparedStatement
         }
@@ -781,7 +783,7 @@ public final class SqliteValueBox: ValueBox {
             case .int64:
                 resultStatement.bind(1, number: key.getInt64(0))
         }
-        print("resultStatement:",resultStatement.statement?.debugDescription ?? "")
+
         return resultStatement
     }
     

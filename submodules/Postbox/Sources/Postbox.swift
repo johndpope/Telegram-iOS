@@ -1077,6 +1077,7 @@ public final class Transaction {
         let disposable = postbox.syncAroundMessageHistoryViewForPeerId(subscriber: subscriber, peerIds: input, ignoreMessagesInTimestampRange: ignoreMessagesInTimestampRange, count: count, clipHoles: clipHoles, anchor: anchor, fixedCombinedReadStates: nil, topTaggedMessageIdNamespaces: Set(), tagMask: nil, appendMessagesFromTheSameGroup: false, namespaces: namespaces, orderStatistics: MessageHistoryViewOrderStatistics(), additionalData: [])
         disposable.dispose()
         
+        print("view?.entries:",view?.entries ?? "")
         return view!
     }
     
@@ -2722,6 +2723,7 @@ final class PostboxImpl {
                         if let combinedState = self.readStateTable.getCombinedState(peerId), let state = combinedState.states.first, state.1.count != 0 {
                             switch state.1 {
                                 case let .idBased(maxIncomingReadId, _, _, _, _):
+                                print("🔥🔥🔥 maxIncomingReadId:",maxIncomingReadId)
                                     anchor = .message(MessageId(peerId: peerId, namespace: state.0, id: maxIncomingReadId))
                                 case let .indexBased(maxIncomingReadIndex, _, _, _):
                                     anchor = .index(maxIncomingReadIndex)
@@ -2763,6 +2765,7 @@ final class PostboxImpl {
                         anchor = .upperBound
                     }
                 }
+                print("🔥 anchor:",anchor)
                 return self.syncAroundMessageHistoryViewForPeerId(subscriber: subscriber, peerIds: peerIds, ignoreMessagesInTimestampRange: ignoreMessagesInTimestampRange, count: count, clipHoles: clipHoles, anchor: anchor, fixedCombinedReadStates: nil, topTaggedMessageIdNamespaces: topTaggedMessageIdNamespaces, tagMask: tagMask, appendMessagesFromTheSameGroup: appendMessagesFromTheSameGroup, namespaces: namespaces, orderStatistics: orderStatistics, additionalData: additionalData)
             })
                 
@@ -3012,11 +3015,99 @@ final class PostboxImpl {
     }
 
     
-    public func summaryForPeerId(_ peerId: PeerId)->[(threadId: Int64, index: MessageIndex, info: StoredMessageHistoryThreadInfo)] {
+    public func getMessagesForPeerId(_ peerId: PeerId,_ myPeerId:PeerId)-> MessageHistoryView?{
+        
+        
+        /*
+         peerIds: single(peerId: 2:Id(rawValue: 1375690723), threadId: nil)
+         ignoreMessagesInTimestampRange:
+         count: 50
+         clipHoles: true
+         anchor: upperBound
+         fixedCombinedReadStates:
+         topTaggedMessageIdNamespaces: [0]
+         tagMask: MessageTags(rawValue: 64)
+         appendMessagesFromTheSameGroup: false
+         namespaces: not(Set([3, 4]))
+         orderStatistics: MessageHistoryViewOrderStatistics(rawValue: 0)
+         additionalData: [Postbox.AdditionalMessageHistoryViewData.peer(0:Id(rawValue: 847052656)), Postbox.AdditionalMessageHistoryViewData.peerChatState(2:Id(rawValue: 1375690723))]
+         */
+        precondition(self.queue.isCurrent())
+        
+        var view: MessageHistoryView? = nil
+        let tagMask:MessageTags?  = MessageTags(rawValue: 64) //
+        let ignoreMessagesInTimestampRange:ClosedRange<Int32>? = nil
+        
+        let subscriber: Subscriber<(MessageHistoryView, ViewUpdateType, InitialMessageHistoryData?), NoError> = Subscriber(next: { next in
+            view = next.0
+            print("hello?:",view ?? "")
+        }, error: { _ in }, completed: {})
+        
+//        let anchor =  HistoryViewInputAnchor.upperBound // latest messages
+        
+//        MessageId(peerId: peer.peerId, namespace: Namespaces.Message.Cloud, id: Int32(clamping: threadId))
+        
+        let cloud:Int32 = 0 //Namespaces.Message.Cloud
+        let msgId = MessageId(peerId: peerId, namespace:cloud, id: Int32(clamping: 0))
+        let idx = MessageIndex(id: msgId, timestamp: 0)
+        let anchor =  HistoryViewInputAnchor.index(idx)
+        
+        let namespaces: MessageIdNamespaces  =  .not( Set([4, 3])) //
+        
+        let peerIds = MessageHistoryViewInput.single(peerId: peerId, threadId: nil)
+        //
+        /*
+         additionalData: [
+         1 Postbox.AdditionalMessageHistoryViewData.cachedPeerData(2:Id(rawValue: 1375690723))
+         2 , Postbox.AdditionalMessageHistoryViewData.cachedPeerDataMessages(2:Id(rawValue: 1375690723))
+         3, Postbox.AdditionalMessageHistoryViewData.peerNotificationSettings(2:Id(rawValue: 1375690723))
+        4 , Postbox.AdditionalMessageHistoryViewData.cacheEntry(Postbox.ItemCacheEntryId)
+         5, Postbox.AdditionalMessageHistoryViewData.peer(2:Id(rawValue: 1375690723))
+         6, Postbox.AdditionalMessageHistoryViewData.totalUnreadState
+         7, Postbox.AdditionalMessageHistoryViewData.peerChatState(2:Id(rawValue: 1375690723))]
+         */
+        
+        let test0 = AdditionalMessageHistoryViewData.totalUnreadState
+        let test1 = AdditionalMessageHistoryViewData.cachedPeerDataMessages(peerId)
+        let test2 = AdditionalMessageHistoryViewData.peerNotificationSettings(peerId)
+        let test3 = AdditionalMessageHistoryViewData.peer(peerId)
+        let test4 = AdditionalMessageHistoryViewData.totalUnreadState
+        let test5 = AdditionalMessageHistoryViewData.peerChatState(peerId)
+        let test6 = AdditionalMessageHistoryViewData.cachedPeerData(peerId)
+//        let test5 = AdditionalMessageHistoryViewData.cacheEntry(ItemCacheEntryId.init(collectionId: <#T##ItemCacheCollectionId#>, key: <#T##ValueBoxKey#>))
+        /*
+         
+         AdInScreen
+         [Postbox.AdditionalMessageHistoryViewDataEntry.cachedPeerData(2:Id(rawValue: 1479202492), Optional(TelegramCore.CachedChannelData)), Postbox.AdditionalMessageHistoryViewDataEntry.cachedPeerDataMessages(2:Id(rawValue: 1479202492), Optional([:])), Postbox.AdditionalMessageHistoryViewDataEntry.peerNotificationSettings(Optional(TelegramCore.TelegramPeerNotificationSettings)), Postbox.AdditionalMessageHistoryViewDataEntry.peer(2:Id(rawValue: 1479202492), Optional(TelegramCore.TelegramChannel)), Postbox.AdditionalMessageHistoryViewDataEntry.totalUnreadState(Postbox.ChatListTotalUnreadState(absoluteCounters:
+         
+         [Postbox.PeerSummaryCounterTags(rawValue: 16): Postbox.ChatListTotalUnreadCounters(messageCount: 6, chatCount: 2),
+         Postbox.PeerSummaryCounterTags(rawValue: 256): Postbox.ChatListTotalUnreadCounters(messageCount: 1014, chatCount: 25),
+         Postbox.PeerSummaryCounterTags(rawValue: 128): Postbox.ChatListTotalUnreadCounters(messageCount: 0, chatCount: 0),
+         Postbox.PeerSummaryCounterTags(rawValue: 8): Postbox.ChatListTotalUnreadCounters(messageCount: 1, chatCount: 1),
+         Postbox.PeerSummaryCounterTags(rawValue: 32):
+         Postbox.ChatListTotalUnreadCounters(messageCount: 469, chatCount: 8)], filteredCounters: [Postbox.PeerSummaryCounterTags(rawValue: 8):Postbox.ChatListTotalUnreadCounters(messageCount: 1, chatCount: 1),
+         
+         Postbox.PeerSummaryCounterTags(rawValue: 32): Postbox.ChatListTotalUnreadCounters(messageCount: 303, chatCount: 7),
+         Postbox.PeerSummaryCounterTags(rawValue: 16): Postbox.ChatListTotalUnreadCounters(messageCount: 6, chatCount: 2),
+         Postbox.PeerSummaryCounterTags(rawValue: 128): Postbox.ChatListTotalUnreadCounters(messageCount: 0, chatCount: 0),
+         Postbox.PeerSummaryCounterTags(rawValue: 256): Postbox.ChatListTotalUnreadCounters(messageCount: 988, chatCount: 24)])),
+         
+         Postbox.AdditionalMessageHistoryViewDataEntry.peerChatState(2:Id(rawValue: 1479202492), Optional((pts: 16441, invalidatedPts: Optional(16441), synchronizedUntilMessageId: Optional(6563)))]
+         
+         ChatController
+        [
+         Postbox.AdditionalMessageHistoryViewDataEntry.cachedPeerData(2:Id(rawValue: 1375690723), Optional(TelegramCore.CachedChannelData)), Postbox.AdditionalMessageHistoryViewDataEntry.cachedPeerDataMessages(2:Id(rawValue: 1375690723), Optional([:])), Postbox.AdditionalMessageHistoryViewDataEntry.peerNotificationSettings(Optional(TelegramCore.TelegramPeerNotificationSettings)), Postbox.AdditionalMessageHistoryViewDataEntry.cacheEntry(Postbox.ItemCacheEntryId, nil),
+             Postbox.AdditionalMessageHistoryViewDataEntry.peer(2:Id(rawValue: 1375690723), Optional(TelegramCore.TelegramChannel)),
+             Postbox.AdditionalMessageHistoryViewDataEntry.totalUnreadState(Postbox.ChatListTotalUnreadState(absoluteCounters: [Postbox.PeerSummaryCounterTags(rawValue: 16): Postbox.ChatListTotalUnreadCounters(messageCount: 6, chatCount: 2), Postbox.PeerSummaryCounterTags(rawValue: 256): Postbox.ChatListTotalUnreadCounters(messageCount: 1015, chatCount: 25), Postbox.PeerSummaryCounterTags(rawValue: 128): Postbox.ChatListTotalUnreadCounters(messageCount: 0, chatCount: 0), Postbox.PeerSummaryCounterTags(rawValue: 8): Postbox.ChatListTotalUnreadCounters(messageCount: 1, chatCount: 1), Postbox.PeerSummaryCounterTags(rawValue: 32): Postbox.ChatListTotalUnreadCounters(messageCount: 469, chatCount: 8)], filteredCounters: [Postbox.PeerSummaryCounterTags(rawValue: 8): Postbox.ChatListTotalUnreadCounters(messageCount: 1, chatCount: 1), Postbox.PeerSummaryCounterTags(rawValue: 32): Postbox.ChatListTotalUnreadCounters(messageCount: 303, chatCount: 7), Postbox.PeerSummaryCounterTags(rawValue: 16): Postbox.ChatListTotalUnreadCounters(messageCount: 6, chatCount: 2), Postbox.PeerSummaryCounterTags(rawValue: 128): Postbox.ChatListTotalUnreadCounters(messageCount: 0, chatCount: 0), Postbox.PeerSummaryCounterTags(rawValue: 256): Postbox.ChatListTotalUnreadCounters(messageCount: 989, chatCount: 24)])), Postbox.AdditionalMessageHistoryViewDataEntry.peerChatState(2:Id(rawValue: 1375690723), Optional((pts: 62947, invalidatedPts: Optional(62947), synchronizedUntilMessageId: Optional(31618)))]
+        */
+        let additionalData = [test0,test1,test2, test3, test4,test5,test6]
+        
+        let disposable = self.syncAroundMessageHistoryViewForPeerId(subscriber: subscriber, peerIds:peerIds, ignoreMessagesInTimestampRange: ignoreMessagesInTimestampRange, count: 100000, clipHoles: true, anchor: anchor, fixedCombinedReadStates: nil, topTaggedMessageIdNamespaces: [0], tagMask: tagMask, appendMessagesFromTheSameGroup: false, namespaces:namespaces, orderStatistics: MessageHistoryViewOrderStatistics(), additionalData: additionalData)
+        disposable.dispose()
+        
+        print("view:",view ?? "")
 
-       let items = self.messageHistoryThreadIndexTable.fetch(peerId: peerId, namespace: 0, start: MessageHistoryThreadIndexTable.IndexBoundary.upperBound, end: MessageHistoryThreadIndexTable.IndexBoundary.lowerBound, limit: 10000)
-        return items
-      
+        return view
     }
     
     public func messageForPeerId(_ peerId: PeerId) -> MessageHistoryView {
@@ -4042,14 +4133,21 @@ public class Postbox {
         }
     }
 
-    
-    public func  summaryForPeerId(_ peerId: PeerId)-> [(threadId: Int64, index: MessageIndex, info: StoredMessageHistoryThreadInfo)] {
-        
-        return self.impl.syncWith { impl -> [(threadId: Int64, index: MessageIndex, info: StoredMessageHistoryThreadInfo)] in
-          return impl.summaryForPeerId(peerId)
-        }
 
+    public func  getMessagesForPeerId(_ peerId: PeerId, _ myPeerId:PeerId) -> MessageHistoryView? {
+        return self.impl.syncWith { impl -> MessageHistoryView? in
+            return impl.getMessagesForPeerId(peerId,myPeerId)
+        }
     }
+    
+    
+//    public func  summaryForPeerId(_ peerId: PeerId)-> [(threadId: Int64, index: MessageIndex, info: StoredMessageHistoryThreadInfo)] {
+//        
+//        return self.impl.syncWith { impl -> [(threadId: Int64, index: MessageIndex, info: StoredMessageHistoryThreadInfo)] in
+//          return impl.summaryForPeerId(peerId)
+//        }
+//
+//    }
 
     public func setKeychainEntryForKey(_ key: String, value: Data) {
         self.impl.with { impl in

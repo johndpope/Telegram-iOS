@@ -257,7 +257,7 @@ public final class GalleryControllerPresentationArguments {
     }
 }
 
-private enum GalleryMessageHistoryView {
+public enum GalleryMessageHistoryView {
     case view(MessageHistoryView)
     case entries([MessageHistoryEntry], Bool, Bool)
     

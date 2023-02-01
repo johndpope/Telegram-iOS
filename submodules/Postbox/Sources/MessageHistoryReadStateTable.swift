@@ -69,6 +69,7 @@ final class MessageHistoryReadStateTable: Table {
                         let markedUnread = (flags & (1 << 0)) != 0
                         
                         state = .idBased(maxIncomingReadId: maxIncomingReadId, maxOutgoingReadId: maxOutgoingReadId, maxKnownId: maxKnownId, count: count, markedUnread: markedUnread)
+                        print("🔥🔥🔥 id\(id) maxIncomingReadId:",maxIncomingReadId)
                     } else {
                         var maxIncomingReadTimestamp: Int32 = 0
                         var maxIncomingReadIdPeerId: Int64 = 0
@@ -99,6 +100,7 @@ final class MessageHistoryReadStateTable: Table {
                         let markedUnread = (flags & (1 << 0)) != 0
                         
                         state = .indexBased(maxIncomingReadIndex: MessageIndex(id: MessageId(peerId: PeerId(maxIncomingReadIdPeerId), namespace: maxIncomingReadIdNamespace, id: maxIncomingReadIdId), timestamp: maxIncomingReadTimestamp), maxOutgoingReadIndex: MessageIndex(id: MessageId(peerId: PeerId(maxOutgoingReadIdPeerId), namespace: maxOutgoingReadIdNamespace, id: maxOutgoingReadIdId), timestamp: maxOutgoingReadTimestamp), count: count, markedUnread: markedUnread)
+                        print("🔥🔥🔥 id\(id) maxIncomingReadId:",maxIncomingReadIdId)
                     }
                     stateByNamespace[namespaceId] = state
                 }
