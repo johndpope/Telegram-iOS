@@ -376,12 +376,12 @@ private func mappedInsertEntries(context: AccountContext, nodeInteraction: ChatL
                         interaction: nodeInteraction
                     )
                     let chatItem =  ListViewInsertItem(index: entry.index, previousIndex: entry.previousIndex, item: chatListViewItem, directionHint: entry.directionHint)
-                    print("🍒  chatListViewItem:",chatListViewItem)
-                    print("🍒  peerData:",peerData)
-                    print("🍒  peerEntry.messages:",peerEntry.messages)
-                    print("🍒  combinedReadState:",combinedReadState ?? "")
-                    
-                    
+//                    print("🍒  chatListViewItem:",chatListViewItem)
+//                    print("🍒  peerData:",peerData)
+//                    print("🍒  peerEntry.messages:",peerEntry.messages)
+//                    print("🍒  combinedReadState:",combinedReadState ?? "")
+//                    
+//                    
                     
                     return chatItem
                     case let .peers(filter, isSelecting, _, filters, displayAutoremoveTimeout):

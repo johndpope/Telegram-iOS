@@ -155,6 +155,7 @@ final class MessageHistoryReadStateTable: Table {
     }
     
     
+    // push notification -> increment totals
     func addIncomingMessages(_ peerId: PeerId, indices: Set<MessageIndex>) -> (CombinedPeerReadState?, Bool) {
         var indicesByNamespace: [MessageId.Namespace: [MessageIndex]] = [:]
         for index in indices {
