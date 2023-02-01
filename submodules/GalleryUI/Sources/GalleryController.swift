@@ -447,7 +447,7 @@ public class GalleryController: ViewController, StandalonePresentableController,
         let message: Signal<Message?, NoError>
         switch source {
         case let .peerMovieMessagesAtId(messageId, _, _):
-            print("🌱 peerMessagesAtId:",messageId)
+            print("🍿 peerMovieMessagesAtId:",messageId)
             message = context.account.postbox.messageAtId(messageId)
         case let .peerMessagesAtId(messageId, _, _):
             print("🌱 peerMessagesAtId:",messageId)
@@ -468,6 +468,14 @@ public class GalleryController: ViewController, StandalonePresentableController,
             switch source {
                 
             case let .peerMovieMessagesAtId(_, chatLocation, chatLocationContextHolder):
+                
+                if let (media, _) = mediaForMessage(message: message!) {
+                     if let file = media as? TelegramMediaFile {
+                        if file.isVideo {
+                            print("🍿  this is a video")
+                        }
+                    }
+                }
                 if let tags = tagsForMessage(message!) {
                     let namespaces: MessageIdNamespaces
                     if Namespaces.Message.allScheduled.contains(message!.id.namespace) {

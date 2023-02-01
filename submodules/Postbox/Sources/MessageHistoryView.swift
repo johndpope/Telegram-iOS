@@ -973,7 +973,7 @@ public final class MessageHistoryView {
     }
     
     init(_ mutableView: MutableMessageHistoryView) {
-        print("🌱 init mutableView MutableMessageHistoryView")
+//        print("🌱 init mutableView MutableMessageHistoryView")
         self.tagMask = mutableView.tag
         self.namespaces = mutableView.namespaces
         self.isAddedToChatList = mutableView.isAddedToChatList

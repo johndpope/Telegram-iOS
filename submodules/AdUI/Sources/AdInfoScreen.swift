@@ -181,8 +181,8 @@ public final class AdInfoScreen: ViewController {
         }
     }
 
-    private var node: Node {
-        return self.displayNode as! Node
+    private var node: ASDisplayNode {
+        return self.displayNode //as! Node
     }
 
     private let context: AccountContext
@@ -220,16 +220,19 @@ public final class AdInfoScreen: ViewController {
 
     override public func containerLayoutUpdated(_ layout: ContainerViewLayout, transition: ContainedViewLayoutTransition) {
         super.containerLayoutUpdated(layout, transition: transition)
-
-        self.node.containerLayoutUpdated(layout: layout, navigationHeight: self.navigationLayout(layout: layout).navigationFrame.maxY, transition: transition)
+        print("containerLayoutUpdated - do we support rotation??")
+//        self.node.containerLayoutUpdated(layout: layout, navigationHeight: self.navigationLayout(layout: layout).navigationFrame.maxY, transition: transition)
     }
 }
 
 public final class DummyScreen: ViewController {
+    var galleryController:GalleryController?
+    
     private final class Node: ViewControllerTracingNode {
         private weak var controller: DummyScreen?
         private let context: AccountContext
         private var presentationData: PresentationData
+
 
         private let titleNode: ImmediateTextNode
 
@@ -397,6 +400,33 @@ public final class DummyScreen: ViewController {
     
     public override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+
+    }
+    private var node: Node {
+        return self.displayNode as! Node
+    }
+
+    private let context: AccountContext
+    private var presentationData: PresentationData
+
+    public init(context: AccountContext) {
+        self.context = context
+        self.presentationData = context.sharedContext.currentPresentationData.with { $0 }
+
+        super.init(navigationBarPresentationData: NavigationBarPresentationData(presentationData: self.presentationData))
+
+       self.navigationPresentation = .modal
+
+        self.navigationItem.setLeftBarButton(UIBarButtonItem(title: "", style: .plain, target: self, action: #selector(self.noAction)), animated: false)
+        self.navigationItem.setRightBarButton(UIBarButtonItem(title: self.presentationData.strings.Common_Done, style: .done, target: self, action: #selector(self.donePressed)), animated: false)
+        
+        self.tabBarItem.title = "Dummy"
+        
+        let icon = UIImage(bundleImageName: "Chat List/Tabs/IconContacts")
+        
+        self.tabBarItem.image = icon
+        self.tabBarItem.selectedImage = icon
+        
         
         
         let lauraAboliPeerId = PeerId.Id._internalFromInt64Value(1375690723) //1479202492 // 1375690723 847052656
@@ -431,40 +461,15 @@ public final class DummyScreen: ViewController {
         let message = Message(stableId: 0, stableVersion: 0, id: MessageId(peerId: chatLocation.peerId, namespace: 0, id: maxReadId), globallyUniqueId: nil, groupingKey: nil, groupInfo: nil, threadId: nil, timestamp: 0, flags: [], tags: [], globalTags: [], localTags: [], forwardInfo: nil, author: nil, text: "", attributes: [], media: [], peers: SimpleDictionary(), associatedMessages: SimpleDictionary(), associatedMessageIds: [], associatedMedia: [:], associatedThreadInfo: nil)
 
 //                            let source = GalleryControllerItemSource.standaloneMessage(message)
-                let source = GalleryControllerItemSource.peerMessagesAtId(messageId: message.id, chatLocation: .peer(id: message.id.peerId), chatLocationContextHolder: Atomic<ChatLocationContextHolder?>(value: nil))
-        let gallery = GalleryController(context: self.context, source: source, playbackRate: 1.00, replaceRootController: { controller, ready in
+                let source = GalleryControllerItemSource.peerMovieMessagesAtId(messageId: message.id, chatLocation: .peer(id: message.id.peerId), chatLocationContextHolder: Atomic<ChatLocationContextHolder?>(value: nil))
+        self.galleryController = GalleryController(context: self.context, source: source, playbackRate: 1.00, replaceRootController: { controller, ready in
             //                                    if let baseNavigationController = baseNavigationController {
             //                                        baseNavigationController.replaceTopController(controller, animated: false, ready: ready)
             //                                    }
         }, baseNavigationController: nil)
 //        controllers.append(gallery)
-       let level = PresentationSurfaceLevel(rawValue:0)
-       self.context.sharedContext.mainWindow?.present(gallery, on: level, blockInteraction: true, completion: {})
-    }
-    private var node: Node {
-        return self.displayNode as! Node
-    }
-
-    private let context: AccountContext
-    private var presentationData: PresentationData
-
-    public init(context: AccountContext) {
-        self.context = context
-        self.presentationData = context.sharedContext.currentPresentationData.with { $0 }
-
-        super.init(navigationBarPresentationData: NavigationBarPresentationData(presentationData: self.presentationData))
-
-       self.navigationPresentation = .modal
-
-        self.navigationItem.setLeftBarButton(UIBarButtonItem(title: "", style: .plain, target: self, action: #selector(self.noAction)), animated: false)
-        self.navigationItem.setRightBarButton(UIBarButtonItem(title: self.presentationData.strings.Common_Done, style: .done, target: self, action: #selector(self.donePressed)), animated: false)
-        
-        self.tabBarItem.title = "Dummy"
-        
-        let icon = UIImage(bundleImageName: "Chat List/Tabs/IconContacts")
-        
-        self.tabBarItem.image = icon
-        self.tabBarItem.selectedImage = icon
+//       let level = PresentationSurfaceLevel(rawValue:0)
+//       self.context.sharedContext.mainWindow?.present(gallery, on: level, blockInteraction: true, completion: {})
     
     }
 
@@ -480,7 +485,9 @@ public final class DummyScreen: ViewController {
     }
 
     override public func loadDisplayNode() {
-        self.displayNode = Node(controller: self, context: self.context)
+//        self.displayNode = Node(controller: self, context: self.context)
+        self.galleryController!.loadDisplayNode()
+        self.displayNode = self.galleryController!.displayNode
 
         super.displayNodeDidLoad()
     }

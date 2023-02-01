@@ -732,13 +732,13 @@ public final class SqliteValueBox: ValueBox {
             resultStatement = statement
         } else {
             var statement: OpaquePointer? = nil
-           print("table.id:",table.id)
-            print("key:",key)
+//           print("table.id:",table.id)
+//            print("key:",key)
             let status = sqlite3_prepare_v3(self.database.handle, "SELECT value FROM t\(table.id) WHERE key=?", -1, SQLITE_PREPARE_PERSISTENT, &statement, nil)
             precondition(status == SQLITE_OK)
             let preparedStatement = SqlitePreparedStatement(statement: statement)
             self.getStatements[table.id] = preparedStatement
-            print("preparedStatement:",preparedStatement.statement ?? "")
+//            print("preparedStatement:",preparedStatement.statement ?? "")
             resultStatement =  preparedStatement
         }
         
@@ -765,12 +765,12 @@ public final class SqliteValueBox: ValueBox {
             resultStatement = statement
         } else {
             var statement: OpaquePointer? = nil
-            print("table.id:",table.id)
-             print("key:",key)
+//            print("table.id:",table.id)
+//             print("key:",key)
             let status = sqlite3_prepare_v3(self.database.handle, "SELECT rowid FROM t\(table.id) WHERE key=?", -1, SQLITE_PREPARE_PERSISTENT, &statement, nil)
             precondition(status == SQLITE_OK)
             let preparedStatement = SqlitePreparedStatement(statement: statement )
-            print("preparedStatement:",preparedStatement.statement ?? "")
+//            print("preparedStatement:",preparedStatement.statement ?? "")
             self.getRowIdStatements[table.id] = preparedStatement
             resultStatement =  preparedStatement
         }

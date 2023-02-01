@@ -950,8 +950,11 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
             strongSelf.setPeerThreadHidden(peerId: peerId, threadId: threadId, isHidden: isHidden)
         }
         
+        
+        // didSelectRowAtIndex ->
         self.chatListDisplayNode.mainContainerNode.peerSelected = { [weak self] peer, threadId, animated, activateInput, promoInfo in
             if let strongSelf = self {
+                print("INFO:peerSelected peer:",peer)
                 if let navigationController = strongSelf.navigationController as? NavigationController {
                     var scrollToEndIfExists = false
                     if let layout = strongSelf.validLayout, case .regular = layout.metrics.widthClass {
@@ -982,7 +985,7 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
                             
                             let chatLocation: NavigateToChatControllerParams.Location
                             chatLocation = .peer(peer)
-                            
+                            print("INFO:navigateToChatController")
                             strongSelf.context.sharedContext.navigateToChatController(NavigateToChatControllerParams(navigationController: navigationController, context: strongSelf.context, chatLocation: chatLocation, activateInput: (activateInput && !peer.isDeleted) ? .text : nil, scrollToEndIfExists: scrollToEndIfExists, animated: !scrollToEndIfExists, options: navigationAnimationOptions, parentGroupId: groupId._asGroup(), chatListFilter: strongSelf.chatListDisplayNode.mainContainerNode.currentItemNode.chatListFilter?.id, completion: { [weak self] controller in
                                 self?.chatListDisplayNode.mainContainerNode.currentItemNode.clearHighlightAnimated(true)
                                 if let promoInfo = promoInfo {

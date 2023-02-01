@@ -90,7 +90,7 @@ func chatHistoryViewForLocation(_ location: ChatHistoryLocationInput, ignoreMess
                 return signal
                 |> map { view, updateType, initialData -> ChatHistoryViewUpdate in
                     
-                    print("view.entries:",view.entries)
+//                    print("view.entries:",view.entries)
                     let (cachedData, cachedDataMessages, readStateData) = extractAdditionalData(view: view, chatLocation: chatLocation)
                     
                     let combinedInitialData = ChatHistoryCombinedInitialData(initialData: initialData, buttonKeyboardMessage: view.topTaggedMessages.first, cachedData: cachedData, cachedDataMessages: cachedDataMessages, readStateData: readStateData)
