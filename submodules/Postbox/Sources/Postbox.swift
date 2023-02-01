@@ -4219,7 +4219,7 @@ public class Postbox {
     }
 
     public func transaction<T>(userInteractive: Bool = false, ignoreDisabled: Bool = false, _ f: @escaping(Transaction) -> T) -> Signal<T, NoError> {
-        print("postbox transaction:",String(describing: T.self))
+//        print("postbox transaction:",String(describing: T.self))
         return Signal<T, NoError> { subscriber in
             let disposable = MetaDisposable()
 

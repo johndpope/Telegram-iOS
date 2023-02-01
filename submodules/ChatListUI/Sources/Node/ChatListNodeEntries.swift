@@ -382,7 +382,7 @@ private func offsetPinnedIndex(_ index: EngineChatList.Item.Index, offset: UInt1
 }
 
 func chatListNodeEntriesForView(_ view: EngineChatList, state: ChatListNodeState, savedMessagesPeer: EnginePeer?, foundPeers: [(EnginePeer, EnginePeer?)], hideArchivedFolderByDefault: Bool, displayArchiveIntro: Bool, mode: ChatListNodeMode, chatListLocation: ChatListControllerLocation) -> (entries: [ChatListNodeEntry], loading: Bool) {
-    print("chatListNodeEntriesForView")
+//    print("chatListNodeEntriesForView")
     var result: [ChatListNodeEntry] = []
     
     var pinnedIndexOffset: UInt16 = 0

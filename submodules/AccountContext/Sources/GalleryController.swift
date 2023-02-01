@@ -6,6 +6,7 @@ import TelegramCore
 
 public enum GalleryControllerItemSource {
     case peerMessagesAtId(messageId: MessageId, chatLocation: ChatLocation, chatLocationContextHolder: Atomic<ChatLocationContextHolder?>)
+    case peerMovieMessagesAtId(messageId: MessageId, chatLocation: ChatLocation, chatLocationContextHolder: Atomic<ChatLocationContextHolder?>)
     case standaloneMessage(Message)
     case custom(messages: Signal<([Message], Int32, Bool), NoError>, messageId: MessageId, loadMore: (() -> Void)?)
 }
