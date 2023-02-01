@@ -1795,6 +1795,11 @@ final class PostboxImpl {
     
     private var keychainOperationsDisposable = DisposableSet()
     
+    public func postboxTransaction() -> Transaction{
+        return Transaction(queue: self.queue, postbox: self)
+    }
+
+    
     public func setKeychainEntryForKey(_ key: String, value: Data) {
         let metaDisposable = MetaDisposable()
         self.keychainOperationsDisposable.add(metaDisposable)
@@ -2598,6 +2603,24 @@ final class PostboxImpl {
         }
     }
     
+    public func forcedTransaction<T>(_ f: (Transaction) -> T) -> (result: T, updatedTransactionStateVersion: Int64?, updatedMasterClientId: Int64?) {
+        
+        
+        self.valueBox.begin()
+        let transaction = Transaction(queue: self.queue, postbox: self)
+        self.afterBegin(transaction: transaction)
+        let result = f(transaction)
+        let (updatedTransactionState, updatedMasterClientId) = self.beforeCommit(currentTransaction: transaction)
+        transaction.disposed = true
+        self.valueBox.commit()
+        
+        if let currentUpdatedState = self.currentUpdatedState {
+            self.statePipe.putNext(currentUpdatedState)
+        }
+        self.currentUpdatedState = nil
+        
+        return (result, updatedTransactionState, updatedMasterClientId)
+    }
     private func internalTransaction<T>(_ f: (Transaction) -> T) -> (result: T, updatedTransactionStateVersion: Int64?, updatedMasterClientId: Int64?) {
         self.valueBox.begin()
         let transaction = Transaction(queue: self.queue, postbox: self)
@@ -4120,10 +4143,24 @@ public class Postbox {
             )
         })
     }
+    
+    public func postboxTransaction() -> Transaction{
+        return self.impl.syncWith { impl -> Transaction in
+            return impl.postboxTransaction()
+        }
+    }
 
     public func keychainEntryForKey(_ key: String) -> Data? {
         return self.impl.syncWith { impl -> Data? in
             return impl.keychainEntryForKey(key)
+        }
+    }
+    
+    //_ f: @escaping(Subscriber<T, E>, Transaction) -> Disposable
+    
+    public func forcedTransaction<T>(_ f: @escaping(Transaction) -> T) -> (result: T, updatedTransactionStateVersion: Int64?, updatedMasterClientId: Int64?) {
+        return self.impl.syncWith { impl -> (result: T, updatedTransactionStateVersion: Int64?, updatedMasterClientId: Int64?) in
+            return impl.forcedTransaction(f)
         }
     }
     
@@ -4166,6 +4203,9 @@ public class Postbox {
         }
     }
 
+
+
+    
     public func transactionSignal<T, E>(userInteractive: Bool = false, _ f: @escaping(Subscriber<T, E>, Transaction) -> Disposable) -> Signal<T, E> {
         return Signal<T, E> { subscriber in
             let disposable = MetaDisposable()

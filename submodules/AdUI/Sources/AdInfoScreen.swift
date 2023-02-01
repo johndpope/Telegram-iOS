@@ -395,19 +395,20 @@ public final class DummyScreen: ViewController {
         }
     }
     
-
-    
     public override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         
-//
-//        let lauraAboliPeerId = PeerId.Id._internalFromInt64Value(1375690723) //1479202492 // 1375690723 847052656
-//        let peerId = PeerId(namespace: Namespaces.Peer.CloudChannel, id:lauraAboliPeerId)
+        
+        let lauraAboliPeerId = PeerId.Id._internalFromInt64Value(1375690723) //1479202492 // 1375690723 847052656
+        let peerId = PeerId(namespace: Namespaces.Peer.CloudChannel, id:lauraAboliPeerId)
 
 
-  
-//
-//        let signal = context.account.postbox.transaction { transaction -> (MessageId.Namespace, PeerReadState)? in
+        let postbox = context.account.postbox
+        let test = postbox.postboxTransaction().getPeerReadStates(peerId)
+        
+//        let results = context.account.postbox.forcedTransaction( )
+        print("test:",test ?? "")
+//        { transaction -> (MessageId.Namespace, PeerReadState)? in
 //            if let readStates = transaction.getPeerReadStates(peerId) {
 //                for (namespace, readState) in readStates {
 //                    if namespace == Namespaces.Message.Cloud || namespace == Namespaces.Message.SecretIncoming {
@@ -415,10 +416,11 @@ public final class DummyScreen: ViewController {
 //                    }
 //                }
 //            }
-//            return nil
 //        }
-       
+
         
+        //
+//
 //
 //
 //

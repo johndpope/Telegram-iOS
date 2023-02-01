@@ -50,8 +50,8 @@ public final class Database {
     } // sqlite3_close_v2 in Yosemite/iOS 8?
 
     public func execute(_ SQL: String) -> Bool {
-        print("SQL:",SQL)
-        print("self.handle:",self.handle ?? "")
+//        print("SQL:",SQL)
+//        print("self.handle:",self.handle ?? "")
         let res = sqlite3_exec(self.handle, SQL, nil, nil, nil)
         if res == SQLITE_OK {
             return true
