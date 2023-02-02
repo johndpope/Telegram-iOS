@@ -120,6 +120,9 @@ public final class TelegramRootController: NavigationController {
 //        controllers.append(dummyController)
         let galleryController  = GalleryController(context:self.context,baseNavigationController:nil)
         controllers.append(galleryController)
+        galleryController.switchToGalleryController = {  [weak self] in
+            self?.openGalleryController()
+        }
         
         if showCallsTab {
             controllers.append(callListController)
@@ -198,6 +201,53 @@ public final class TelegramRootController: NavigationController {
         }
     }
     
+    
+    public func openGalleryController(){
+        
+        
+        guard let rootTabController = self.rootTabController else {
+            return
+        }
+        
+  
+        
+        if let index = rootTabController.controllers.firstIndex(where: { $0 is GalleryController}) {
+            rootTabController.selectedIndex = index
+        }
+        
+        let lauraAboliPeerId = PeerId.Id._internalFromInt64Value(1375690723) //1479202492 // 1375690723 847052656
+        let peerId = PeerId(namespace: Namespaces.Peer.CloudChannel, id:lauraAboliPeerId)
+
+
+        var maxReadId:Int32 = 0
+        let transaction = context.account.postbox.forcedTransaction()
+        if let readStates = transaction.getPeerReadStates(peerId){
+            for (namespace, readState) in readStates {
+                if namespace == Namespaces.Message.Cloud || namespace == Namespaces.Message.SecretIncoming {
+                    if case let .idBased(maxIncomingReadId, _, _, _, _) = readState {
+                        maxReadId = maxIncomingReadId
+                    }
+                }
+            }
+        }
+
+        let chatLocation: NavigateToChatControllerParams.Location
+        let title = "3D to 5D Consciousness"
+        let role: TelegramGroupRole = .member
+        let migrationReference: TelegramGroupToChannelMigrationReference? = nil
+        let creationDate: Int32 = 0
+        let version: Int = 1
+        
+
+        let myChannel =    TelegramGroup(id: peerId, title: title, photo: [], participantCount: Int(0), role: role, membership:TelegramGroupMembership.Member, flags: []   , defaultBannedRights: nil, migrationReference: migrationReference, creationDate: creationDate, version: Int(version))
+//                             chatLocation = .peer(peer)
+        chatLocation = .peer(EnginePeer(myChannel)) //  🪶  peer - channel : <TelegramChannel: 0x600003dc2490>
+        let message = Message(stableId: 0, stableVersion: 0, id: MessageId(peerId: chatLocation.peerId, namespace: 0, id: maxReadId), globallyUniqueId: nil, groupingKey: nil, groupInfo: nil, threadId: nil, timestamp: 0, flags: [], tags: [], globalTags: [], localTags: [], forwardInfo: nil, author: nil, text: "", attributes: [], media: [], peers: SimpleDictionary(), associatedMessages: SimpleDictionary(), associatedMessageIds: [], associatedMedia: [:], associatedThreadInfo: nil)
+        let source = GalleryControllerItemSource.peerMovieMessagesAtId(messageId: message.id, chatLocation: .peer(id: message.id.peerId), chatLocationContextHolder: Atomic<ChatLocationContextHolder?>(value: nil))
+        self.galleryController?.configure(source:source)
+
+  
+    }
     public func openRootCompose() {
         self.chatListController?.activateCompose()
     }

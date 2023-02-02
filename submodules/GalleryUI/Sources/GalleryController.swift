@@ -400,7 +400,7 @@ public class GalleryController: ViewController, StandalonePresentableController,
     public var useSimpleAnimation: Bool = false
     
     private var initialOrientation: UIInterfaceOrientation?
-    
+    public var switchToGalleryController: (() -> Void)?
     
     public init(context: AccountContext, baseNavigationController:NavigationController?) {
         self.context = context
@@ -442,6 +442,605 @@ public class GalleryController: ViewController, StandalonePresentableController,
         
         
         self.statusBar.statusBarStyle = .White
+        
+    }
+    public func configure(source: GalleryControllerItemSource){
+        
+//, invertItemOrder: Bool = false, streamSingleVideo: Bool = false, fromPlayingVideo: Bool = false, landscape: Bool = false, timecode: Double? = nil, playbackRate: Double? = nil, synchronousLoad: Bool = false, replaceRootController: @escaping (ViewController, Promise<Bool>?) -> Void, baseNavigationController: NavigationController?, actionInteraction: GalleryControllerActionInteraction? = nil
+        self.source = source
+        self.invertItemOrder = false
+        let streamSingleVideo = false
+//        self.replaceRootController = false
+//        self.baseNavigationController = baseNavigationController
+//        self.actionInteraction = actionInteraction
+//        self.streamVideos = streamSingleVideo
+//        self.fromPlayingVideo = fromPlayingVideo
+//        self.landscape = landscape
+//        self.timecode = timecode
+//        self.playbackRate = playbackRate
+        self.presentationData = context.sharedContext.currentPresentationData.with { $0 }
+
+        
+        let message: Signal<Message?, NoError>
+        switch source {
+        case let .peerMovieMessagesAtId(messageId, _, _):
+            print("🍿 peerMovieMessagesAtId:",messageId)
+            message = context.account.postbox.messageAtId(messageId)
+        case let .peerMessagesAtId(messageId, _, _):
+            print("🌱 peerMessagesAtId:",messageId)
+            message = context.account.postbox.messageAtId(messageId)
+        case let .standaloneMessage(m):
+            message = .single(m)
+        case let .custom(messages, messageId, _):
+            message = messages
+            |> take(1)
+            |> map { messages, _, _ in
+                return messages.first(where: { $0.id == messageId })
+            }
+        }
+        
+        let messageView = message
+        |> filter({ $0 != nil })
+        |> mapToSignal { message -> Signal<GalleryMessageHistoryView?, NoError> in
+            switch source {
+                
+            case let .peerMovieMessagesAtId(_, chatLocation, chatLocationContextHolder):
+                
+                if let (media, _) = mediaForMessage(message: message!) {
+                    if let file = media as? TelegramMediaFile {
+                        if file.isVideo {
+                            print("🍿  this is a video")
+                        }
+                    }
+                }
+                if let tags = tagsForMessage(message!) {
+                    let namespaces: MessageIdNamespaces
+                    if Namespaces.Message.allScheduled.contains(message!.id.namespace) {
+                        namespaces = .just(Namespaces.Message.allScheduled)
+                    } else {
+                        namespaces = .not(Namespaces.Message.allScheduled)
+                    }
+                    
+                    let anchor =  HistoryViewInputAnchor.index(message!.index)
+                    let viewLocation = self.context.chatLocationInput(for: chatLocation, contextHolder: chatLocationContextHolder)
+                    return self.context.account.postbox.aroundMessageHistoryViewForLocation(viewLocation, anchor: anchor, ignoreMessagesInTimestampRange: nil, count: 50, clipHoles: false, fixedCombinedReadStates: nil, topTaggedMessageIdNamespaces: [], tagMask: tags, appendMessagesFromTheSameGroup: false, namespaces: namespaces, orderStatistics: [.combinedLocation])
+                    |> mapToSignal { (view, _, _) -> Signal<GalleryMessageHistoryView?, NoError> in
+                        let mapped = GalleryMessageHistoryView.view(view)
+                        return .single(mapped)
+                    }
+                } else {
+                    print("🌱 chatLocation:",chatLocation)
+                    print("🌱 chatLocationContextHolder:",chatLocationContextHolder)
+                    return .single(GalleryMessageHistoryView.entries([MessageHistoryEntry(message: message!, isRead: false, location: nil, monthLocation: nil, attributes: MutableMessageHistoryEntryAttributes(authorIsContact: false))], false, false))
+                }
+            case let .peerMessagesAtId(_, chatLocation, chatLocationContextHolder):
+                if let tags = tagsForMessage(message!) {
+                    let namespaces: MessageIdNamespaces
+                    if Namespaces.Message.allScheduled.contains(message!.id.namespace) {
+                        namespaces = .just(Namespaces.Message.allScheduled)
+                    } else {
+                        namespaces = .not(Namespaces.Message.allScheduled)
+                    }
+                    
+                    let anchor =  HistoryViewInputAnchor.index(message!.index)
+                    let viewLocation = self.context.chatLocationInput(for: chatLocation, contextHolder: chatLocationContextHolder)
+                    
+                    
+                    return self.context.account.postbox.aroundMessageHistoryViewForLocation(viewLocation, anchor: anchor, ignoreMessagesInTimestampRange: nil, count: 50, clipHoles: false, fixedCombinedReadStates: nil, topTaggedMessageIdNamespaces: [], tagMask: tags, appendMessagesFromTheSameGroup: false, namespaces: namespaces, orderStatistics: [.combinedLocation])
+                    |> mapToSignal { (view, _, _) -> Signal<GalleryMessageHistoryView?, NoError> in
+                        let mapped = GalleryMessageHistoryView.view(view)
+                        return .single(mapped)
+                    }
+                } else {
+                    return .single(GalleryMessageHistoryView.entries([MessageHistoryEntry(message: message!, isRead: false, location: nil, monthLocation: nil, attributes: MutableMessageHistoryEntryAttributes(authorIsContact: false))], false, false))
+                }
+            case .standaloneMessage:
+                return .single(GalleryMessageHistoryView.entries([MessageHistoryEntry(message: message!, isRead: false, location: nil, monthLocation: nil, attributes: MutableMessageHistoryEntryAttributes(authorIsContact: false))], false ,false))
+            case let .custom(messages, _, _):
+                return messages
+                |> map { messages, totalCount, hasMore in
+                    var entries: [MessageHistoryEntry] = []
+                    var index = messages.count
+                    for message in messages.reversed() {
+                        entries.append(MessageHistoryEntry(message: message, isRead: false, location: nil, monthLocation: nil, attributes: MutableMessageHistoryEntryAttributes(authorIsContact: false)))
+                        index -= 1
+                    }
+                    return GalleryMessageHistoryView.entries(entries, hasMore, false)
+                }
+            }
+        }
+        |> take(1)
+        
+     
+        
+        var displayInfoOnTop = false
+        if case .custom = source {
+            displayInfoOnTop = true
+        }
+        
+        let syncResult = Atomic<(Bool, (() -> Void)?)>(value: (false, nil))
+        self.disposable.set(combineLatest(messageView, self.context.account.postbox.preferencesView(keys: [PreferencesKeys.appConfiguration])).start(next: { [weak self] view, preferencesView in
+            let f: () -> Void = {
+                if let strongSelf = self {
+                    if let view = view {
+                        let appConfiguration: AppConfiguration = preferencesView.values[PreferencesKeys.appConfiguration]?.get(AppConfiguration.self) ?? .defaultValue
+                        let configuration = GalleryConfiguration.with(appConfiguration: appConfiguration)
+                        strongSelf.configuration = configuration
+                        
+                        let entries = view.entries
+                        var centralEntryStableId: UInt32?
+                    loop: for i in 0 ..< entries.count {
+                        
+                        let message = entries[i].message
+                        switch source {
+                        case let .peerMovieMessagesAtId(messageId, _, _):
+                            if message.id == messageId {
+                                centralEntryStableId = message.stableId
+                                break loop
+                            }
+                        case let .peerMessagesAtId(messageId, _, _):
+                            if message.id == messageId {
+                                centralEntryStableId = message.stableId
+                                break loop
+                            }
+                        case let .standaloneMessage(m):
+                            if message.id == m.id {
+                                centralEntryStableId = message.stableId
+                                break loop
+                            }
+                        case let .custom(_, messageId, _):
+                            if message.id == messageId {
+                                centralEntryStableId = message.stableId
+                                break loop
+                            }
+                        }
+                    }
+                        
+                        strongSelf.tagMask = view.tagMask
+                        
+                        if strongSelf.invertItemOrder {
+                            strongSelf.entries = entries.reversed()
+                            strongSelf.hasLeftEntries = view.hasLater
+                            strongSelf.hasRightEntries = view.hasEarlier
+                            if let centralEntryStableId = centralEntryStableId {
+                                strongSelf.centralEntryStableId = centralEntryStableId
+                            }
+                        } else {
+                            strongSelf.entries = entries
+                            strongSelf.hasLeftEntries = view.hasEarlier
+                            strongSelf.hasRightEntries = view.hasLater
+                            strongSelf.centralEntryStableId = centralEntryStableId
+                        }
+                        if strongSelf.isViewLoaded {
+                            var items: [GalleryItem] = []
+                            var centralItemIndex: Int?
+                            // 🪶 here we're going over the entries - how to hack these.
+                            for entry in strongSelf.entries {
+                                var isCentral = false
+                                if entry.message.stableId == strongSelf.centralEntryStableId {
+                                    isCentral = true
+                                }
+                                if let item = galleryItemForEntry(context: strongSelf.context, presentationData: strongSelf.presentationData, entry: entry, isCentral: isCentral, streamVideos: streamSingleVideo, fromPlayingVideo: isCentral && strongSelf.fromPlayingVideo, landscape: isCentral && strongSelf.landscape, timecode: isCentral ? strongSelf.timecode : nil, playbackRate: { return self?.playbackRate }, displayInfoOnTop: displayInfoOnTop, configuration: configuration, performAction: strongSelf.performAction, openActionOptions: strongSelf.openActionOptions, storeMediaPlaybackState: strongSelf.actionInteraction?.storeMediaPlaybackState ?? { _, _, _ in }, present: { [weak self] c, a in
+                                    if let strongSelf = self {
+                                        strongSelf.presentInGlobalOverlay(c, with: a)
+                                    }
+                                }) {
+                                    if isCentral {
+                                        centralItemIndex = items.count
+                                    }
+                                    items.append(item)
+                                }
+                            }
+                            
+                            strongSelf.galleryNode.pager.replaceItems(items, centralItemIndex: centralItemIndex)
+                            
+                            if strongSelf.temporaryDoNotWaitForReady {
+                                strongSelf.didSetReady = true
+                                strongSelf._ready.set(.single(true))
+                            } else {
+                                let ready = strongSelf.galleryNode.pager.ready() |> timeout(2.0, queue: Queue.mainQueue(), alternate: .single(Void())) |> afterNext { [weak strongSelf] _ in
+                                    strongSelf?.didSetReady = true
+                                }
+                                strongSelf._ready.set(ready |> map { true })
+                            }
+                        }
+                    }
+                }
+            }
+            var process = false
+            let _ = syncResult.modify { processed, _ in
+                if !processed {
+                    return (processed, f)
+                }
+                process = true
+                return (true, nil)
+            }
+//            semaphore?.signal()
+            if process {
+                Queue.mainQueue().async {
+                    f()
+                }
+            }
+        }))
+        
+
+        
+        var syncResultApply: (() -> Void)?
+        let _ = syncResult.modify { processed, f in
+            syncResultApply = f
+            return (true, nil)
+        }
+        
+        syncResultApply?()
+        
+        self.centralItemAttributesDisposable.add(self.centralItemTitle.get().start(next: { [weak self] title in
+            self?.navigationItem.title = title
+        }))
+        
+        self.centralItemAttributesDisposable.add(self.centralItemTitleView.get().start(next: { [weak self] titleView in
+            self?.navigationItem.titleView = titleView
+        }))
+        
+        self.centralItemAttributesDisposable.add(combineLatest(self.centralItemRightBarButtonItem.get(), self.centralItemRightBarButtonItems.get()).start(next: { [weak self] rightBarButtonItem, rightBarButtonItems in
+            if let rightBarButtonItem = rightBarButtonItem {
+                self?.navigationItem.rightBarButtonItem = rightBarButtonItem
+            } else if let rightBarButtonItems = rightBarButtonItems {
+                self?.navigationItem.rightBarButtonItems = rightBarButtonItems
+            } else {
+                self?.navigationItem.rightBarButtonItem = nil
+                self?.navigationItem.rightBarButtonItems = nil
+            }
+        }))
+        
+        self.centralItemAttributesDisposable.add(self.centralItemFooterContentNode.get().start(next: { [weak self] footerContentNode, overlayContentNode in
+            self?.galleryNode.updatePresentationState({
+                $0.withUpdatedFooterContentNode(footerContentNode).withUpdatedOverlayContentNode(overlayContentNode)
+            }, transition: .immediate)
+        }))
+        
+        self.centralItemAttributesDisposable.add(self.centralItemNavigationStyle.get().start(next: { [weak self] style in
+            if let strongSelf = self {
+                switch style {
+                case .dark:
+                    strongSelf.statusBar.statusBarStyle = .White
+                    strongSelf.navigationBar?.updatePresentationData(NavigationBarPresentationData(theme: GalleryController.darkNavigationTheme, strings: NavigationBarStrings(presentationStrings: strongSelf.presentationData.strings)))
+                    strongSelf.galleryNode.backgroundNode.backgroundColor = UIColor.black
+                    strongSelf.galleryNode.isBackgroundExtendedOverNavigationBar = true
+                case .light:
+                    strongSelf.statusBar.statusBarStyle = .Black
+                    strongSelf.navigationBar?.updatePresentationData(NavigationBarPresentationData(theme: GalleryController.darkNavigationTheme, strings: NavigationBarStrings(presentationStrings: strongSelf.presentationData.strings)))
+                    strongSelf.galleryNode.backgroundNode.backgroundColor = UIColor(rgb: 0xbdbdc2)
+                    strongSelf.galleryNode.isBackgroundExtendedOverNavigationBar = false
+                }
+            }
+        }))
+        
+        let mediaManager = self.context.sharedContext.mediaManager
+        self.hiddenMediaManagerIndex = mediaManager.galleryHiddenMediaManager.addSource(self._hiddenMedia.get()
+                                                                                        |> map { messageIdAndMedia in
+            if let (messageId, media) = messageIdAndMedia {
+                return .chat(self.context.account.id, messageId, media)
+            } else {
+                return nil
+            }
+        })
+        
+        var performActionImpl: ((GalleryControllerInteractionTapAction) -> Void)?
+       
+        
+        var openActionOptionsImpl: ((GalleryControllerInteractionTapAction, Message) -> Void)?
+      
+        
+        performActionImpl = { [weak self] action in
+            if let strongSelf = self {
+                if case .timecode = action {
+                } else {
+                    strongSelf.dismiss(forceAway: false)
+                }
+                switch action {
+                case let .url(url, concealed):
+                    strongSelf.actionInteraction?.openUrl(url, concealed)
+                case let .textMention(mention):
+                    strongSelf.actionInteraction?.openPeerMention(mention)
+                case let .peerMention(peerId, _):
+                    let _ = (strongSelf.context.engine.data.get(TelegramEngine.EngineData.Item.Peer.Peer(id: peerId))
+                             |> deliverOnMainQueue).start(next: { peer in
+                        if let strongSelf = self, let peer = peer {
+                            strongSelf.actionInteraction?.openPeer(peer)
+                        }
+                    })
+                case let .botCommand(command):
+                    strongSelf.actionInteraction?.openBotCommand(command)
+                case let .hashtag(peerName, hashtag):
+                    strongSelf.actionInteraction?.openHashtag(peerName, hashtag)
+                case let .timecode(timecode, _):
+                    strongSelf.galleryNode.pager.centralItemNode()?.processAction(.timecode(timecode))
+                }
+            }
+        }
+        
+        openActionOptionsImpl = { [weak self] action, message in
+            if let strongSelf = self {
+                var presentationData = strongSelf.presentationData
+                if !presentationData.theme.overallDarkAppearance {
+                    presentationData = presentationData.withUpdated(theme: defaultDarkColorPresentationTheme)
+                }
+                switch action {
+                case let .url(url, _):
+                    var cleanUrl = url
+                    var canAddToReadingList = true
+                    let canOpenIn = availableOpenInOptions(context: strongSelf.context, item: .url(url: url)).count > 1
+                    let mailtoString = "mailto:"
+                    let telString = "tel:"
+                    var openText = presentationData.strings.Conversation_LinkDialogOpen
+                    var phoneNumber: String?
+                    
+                    var isEmail = false
+                    var isPhoneNumber = false
+                    if cleanUrl.hasPrefix(mailtoString) {
+                        canAddToReadingList = false
+                        cleanUrl = String(cleanUrl[cleanUrl.index(cleanUrl.startIndex, offsetBy: mailtoString.distance(from: mailtoString.startIndex, to: mailtoString.endIndex))...])
+                        isEmail = true
+                    } else if cleanUrl.hasPrefix(telString) {
+                        canAddToReadingList = false
+                        phoneNumber = String(cleanUrl[cleanUrl.index(cleanUrl.startIndex, offsetBy: telString.distance(from: telString.startIndex, to: telString.endIndex))...])
+                        cleanUrl = phoneNumber!
+                        openText = presentationData.strings.UserInfo_PhoneCall
+                        isPhoneNumber = true
+                    } else if canOpenIn {
+                        openText = presentationData.strings.Conversation_FileOpenIn
+                    }
+                    let actionSheet = ActionSheetController(presentationData: presentationData)
+                    
+                    var items: [ActionSheetItem] = []
+                    items.append(ActionSheetTextItem(title: cleanUrl))
+                    items.append(ActionSheetButtonItem(title: openText, color: .accent, action: { [weak actionSheet] in
+                        actionSheet?.dismissAnimated()
+                        if let strongSelf = self {
+                            if canOpenIn {
+                                strongSelf.actionInteraction?.openUrlIn(url)
+                            } else {
+                                strongSelf.dismiss(forceAway: false)
+                                strongSelf.actionInteraction?.openUrl(url, false)
+                            }
+                        }
+                    }))
+                    if let phoneNumber = phoneNumber {
+                        items.append(ActionSheetButtonItem(title: presentationData.strings.Conversation_AddContact, color: .accent, action: { [weak actionSheet] in
+                            actionSheet?.dismissAnimated()
+                            if let strongSelf = self {
+                                strongSelf.dismiss(forceAway: false)
+                                strongSelf.actionInteraction?.addContact(phoneNumber)
+                            }
+                        }))
+                    }
+                    items.append(ActionSheetButtonItem(title: canAddToReadingList ? presentationData.strings.ShareMenu_CopyShareLink : presentationData.strings.Conversation_ContextMenuCopy, color: .accent, action: { [weak actionSheet, weak self] in
+                        actionSheet?.dismissAnimated()
+                        UIPasteboard.general.string = cleanUrl
+                        
+                        let content: UndoOverlayContent
+                        if isPhoneNumber {
+                            content = .copy(text: presentationData.strings.Conversation_PhoneCopied)
+                        } else if isEmail {
+                            content = .copy(text: presentationData.strings.Conversation_EmailCopied)
+                        } else if canAddToReadingList {
+                            content = .linkCopied(text: presentationData.strings.Conversation_LinkCopied)
+                        } else {
+                            content = .copy(text: presentationData.strings.Conversation_TextCopied)
+                        }
+                        self?.present(UndoOverlayController(presentationData: presentationData, content: content, elevatedLayout: false, animateInAsReplacement: false, action: { _ in return false }), in: .window(.root))
+                    }))
+                    if canAddToReadingList {
+                        items.append(ActionSheetButtonItem(title: presentationData.strings.Conversation_AddToReadingList, color: .accent, action: { [weak actionSheet] in
+                            actionSheet?.dismissAnimated()
+                            if let link = URL(string: url) {
+                                let _ = try? SSReadingList.default()?.addItem(with: link, title: nil, previewText: nil)
+                            }
+                        }))
+                    }
+                    actionSheet.setItemGroups([ActionSheetItemGroup(items: items), ActionSheetItemGroup(items: [
+                        ActionSheetButtonItem(title: presentationData.strings.Common_Cancel, color: .accent, font: .bold, action: { [weak actionSheet] in
+                            actionSheet?.dismissAnimated()
+                        })
+                    ])])
+                    strongSelf.present(actionSheet, in: .window(.root))
+                case let .peerMention(peerId, mention):
+                    let actionSheet = ActionSheetController(presentationData: presentationData)
+                    var items: [ActionSheetItem] = []
+                    if !mention.isEmpty {
+                        items.append(ActionSheetTextItem(title: mention))
+                    }
+                    items.append(ActionSheetButtonItem(title: strongSelf.presentationData.strings.Conversation_LinkDialogOpen, color: .accent, action: { [weak actionSheet] in
+                        actionSheet?.dismissAnimated()
+                        if let strongSelf = self {
+                            strongSelf.dismiss(forceAway: false)
+                            
+                            let _ = (strongSelf.context.engine.data.get(TelegramEngine.EngineData.Item.Peer.Peer(id: peerId))
+                                     |> deliverOnMainQueue).start(next: { peer in
+                                if let strongSelf = self, let peer = peer {
+                                    strongSelf.actionInteraction?.openPeer(peer)
+                                }
+                            })
+                        }
+                    }))
+                    if !mention.isEmpty {
+                        items.append(ActionSheetButtonItem(title: strongSelf.presentationData.strings.Conversation_LinkDialogCopy, color: .accent, action: { [weak actionSheet, weak self] in
+                            actionSheet?.dismissAnimated()
+                            UIPasteboard.general.string = mention
+                            
+                            let content: UndoOverlayContent = .copy(text: presentationData.strings.Conversation_UsernameCopied)
+                            self?.present(UndoOverlayController(presentationData: presentationData, content: content, elevatedLayout: false, animateInAsReplacement: false, action: { _ in return false }), in: .window(.root))
+                        }))
+                    }
+                    actionSheet.setItemGroups([ActionSheetItemGroup(items: items), ActionSheetItemGroup(items: [
+                        ActionSheetButtonItem(title: strongSelf.presentationData.strings.Common_Cancel, color: .accent, font: .bold, action: { [weak actionSheet] in
+                            actionSheet?.dismissAnimated()
+                        })
+                    ])])
+                    strongSelf.present(actionSheet, in: .window(.root))
+                case let .textMention(mention):
+                    let actionSheet = ActionSheetController(presentationData: presentationData)
+                    actionSheet.setItemGroups([ActionSheetItemGroup(items: [
+                        ActionSheetTextItem(title: mention),
+                        ActionSheetButtonItem(title: strongSelf.presentationData.strings.Conversation_LinkDialogOpen, color: .accent, action: { [weak actionSheet] in
+                            actionSheet?.dismissAnimated()
+                            if let strongSelf = self {
+                                strongSelf.dismiss(forceAway: false)
+                                strongSelf.actionInteraction?.openPeerMention(mention)
+                            }
+                        }),
+                        ActionSheetButtonItem(title: strongSelf.presentationData.strings.Conversation_LinkDialogCopy, color: .accent, action: { [weak actionSheet, weak self] in
+                            actionSheet?.dismissAnimated()
+                            UIPasteboard.general.string = mention
+                            
+                            let content: UndoOverlayContent = .copy(text: presentationData.strings.Conversation_TextCopied)
+                            self?.present(UndoOverlayController(presentationData: presentationData, content: content, elevatedLayout: false, animateInAsReplacement: false, action: { _ in return false }), in: .window(.root))
+                        })
+                    ]), ActionSheetItemGroup(items: [
+                        ActionSheetButtonItem(title: strongSelf.presentationData.strings.Common_Cancel, color: .accent, font: .bold, action: { [weak actionSheet] in
+                            actionSheet?.dismissAnimated()
+                        })
+                    ])])
+                    strongSelf.present(actionSheet, in: .window(.root))
+                case let .botCommand(command):
+                    let actionSheet = ActionSheetController(presentationData: presentationData)
+                    var items: [ActionSheetItem] = []
+                    items.append(ActionSheetTextItem(title: command))
+                    items.append(ActionSheetButtonItem(title: strongSelf.presentationData.strings.Conversation_LinkDialogCopy, color: .accent, action: { [weak actionSheet, weak self] in
+                        actionSheet?.dismissAnimated()
+                        UIPasteboard.general.string = command
+                        
+                        let content: UndoOverlayContent = .copy(text: presentationData.strings.Conversation_TextCopied)
+                        self?.present(UndoOverlayController(presentationData: presentationData, content: content, elevatedLayout: false, animateInAsReplacement: false, action: { _ in return false }), in: .window(.root))
+                    }))
+                    actionSheet.setItemGroups([ActionSheetItemGroup(items: items), ActionSheetItemGroup(items: [
+                        ActionSheetButtonItem(title: strongSelf.presentationData.strings.Common_Cancel, color: .accent, font: .bold, action: { [weak actionSheet] in
+                            actionSheet?.dismissAnimated()
+                        })
+                    ])])
+                    strongSelf.present(actionSheet, in: .window(.root))
+                case let .hashtag(peerName, hashtag):
+                    let actionSheet = ActionSheetController(presentationData: presentationData)
+                    actionSheet.setItemGroups([ActionSheetItemGroup(items: [
+                        ActionSheetTextItem(title: hashtag),
+                        ActionSheetButtonItem(title: strongSelf.presentationData.strings.Conversation_LinkDialogOpen, color: .accent, action: { [weak actionSheet] in
+                            actionSheet?.dismissAnimated()
+                            if let strongSelf = self {
+                                strongSelf.dismiss(forceAway: false)
+                                strongSelf.actionInteraction?.openHashtag(peerName, hashtag)
+                            }
+                        }),
+                        ActionSheetButtonItem(title: strongSelf.presentationData.strings.Conversation_LinkDialogCopy, color: .accent, action: { [weak actionSheet, weak self] in
+                            actionSheet?.dismissAnimated()
+                            UIPasteboard.general.string = hashtag
+                            
+                            let content: UndoOverlayContent = .copy(text: presentationData.strings.Conversation_HashtagCopied)
+                            self?.present(UndoOverlayController(presentationData: presentationData, content: content, elevatedLayout: false, animateInAsReplacement: false, action: { _ in return false }), in: .window(.root))
+                        })
+                    ]), ActionSheetItemGroup(items: [
+                        ActionSheetButtonItem(title: strongSelf.presentationData.strings.Common_Cancel, color: .accent, font: .bold, action: { [weak actionSheet] in
+                            actionSheet?.dismissAnimated()
+                        })
+                    ])
+                    ])
+                    strongSelf.present(actionSheet, in: .window(.root))
+                case let .timecode(timecode, text):
+                    let isCopyLink: Bool
+                    if message.id.namespace == Namespaces.Message.Cloud, let _ = message.peers[message.id.peerId] as? TelegramChannel, !(message.media.first is TelegramMediaAction) {
+                        isCopyLink = true
+                    } else {
+                        isCopyLink = false
+                    }
+                    
+                    let actionSheet = ActionSheetController(presentationData: presentationData)
+                    actionSheet.setItemGroups([ActionSheetItemGroup(items: [
+                        ActionSheetTextItem(title: text),
+                        ActionSheetButtonItem(title: strongSelf.presentationData.strings.Conversation_LinkDialogOpen, color: .accent, action: { [weak actionSheet] in
+                            actionSheet?.dismissAnimated()
+                            if let strongSelf = self {
+                                strongSelf.dismiss(forceAway: false)
+                                strongSelf.galleryNode.pager.centralItemNode()?.processAction(.timecode(timecode))
+                            }
+                        }),
+                        ActionSheetButtonItem(title: isCopyLink ? strongSelf.presentationData.strings.Conversation_ContextMenuCopyLink : strongSelf.presentationData.strings.Conversation_LinkDialogCopy, color: .accent, action: { [weak actionSheet, weak self] in
+                            actionSheet?.dismissAnimated()
+                            if isCopyLink, let channel = message.peers[message.id.peerId] as? TelegramChannel {
+                                let _ = (self!.context.engine.messages.exportMessageLink(peerId: message.id.peerId, messageId: message.id, isThread: false)
+                                         |> map { result -> String? in
+                                    return result
+                                }
+                                         |> deliverOnMainQueue).start(next: { link in
+                                    if let link = link {
+                                        UIPasteboard.general.string = link + "?t=\(Int32(timecode))"
+                                        
+                                        let presentationData = self!.context.sharedContext.currentPresentationData.with { $0 }
+                                        
+                                        var warnAboutPrivate = false
+                                        if channel.addressName == nil {
+                                            warnAboutPrivate = true
+                                        }
+                                        
+                                        Queue.mainQueue().after(0.2, {
+                                            let content: UndoOverlayContent
+                                            if warnAboutPrivate {
+                                                content = .linkCopied(text: presentationData.strings.Conversation_PrivateMessageLinkCopiedLong)
+                                            } else {
+                                                content = .linkCopied(text: presentationData.strings.Conversation_LinkCopied)
+                                            }
+                                            self?.present(UndoOverlayController(presentationData: presentationData, content: content, elevatedLayout: false, animateInAsReplacement: false, action: { _ in return false }), in: .window(.root))
+                                        })
+                                    } else {
+                                        UIPasteboard.general.string = text
+                                        
+                                        let content: UndoOverlayContent = .copy(text: presentationData.strings.Conversation_TextCopied)
+                                        self?.present(UndoOverlayController(presentationData: presentationData, content: content, elevatedLayout: false, animateInAsReplacement: false, action: { _ in return false }), in: .current)
+                                    }
+                                })
+                            } else {
+                                UIPasteboard.general.string = text
+                                
+                                let content: UndoOverlayContent = .copy(text: presentationData.strings.Conversation_TextCopied)
+                                self?.present(UndoOverlayController(presentationData: presentationData, content: content, elevatedLayout: false, animateInAsReplacement: false, action: { _ in return false }), in: .window(.root))
+                            }
+                        })
+                    ]), ActionSheetItemGroup(items: [
+                        ActionSheetButtonItem(title: strongSelf.presentationData.strings.Common_Cancel, color: .accent, font: .bold, action: { [weak actionSheet] in
+                            actionSheet?.dismissAnimated()
+                        })
+                    ])
+                    ])
+                    strongSelf.present(actionSheet, in: .window(.root))
+                }
+            }
+        }
+        
+        
+        self.performAction = { action in
+            performActionImpl?(action)
+        }
+        
+
+        self.openActionOptions = { action, message in
+            openActionOptionsImpl?(action, message)
+        }
+        
+        self.blocksBackgroundWhenInOverlay = true
+        self.acceptsFocusWhenInOverlay = true
+        self.isOpaqueWhenInOverlay = true
+        
+        switch source {
+        case let .peerMessagesAtId(id, _, _):
+            if id.peerId.namespace == Namespaces.Peer.SecretChat {
+                self.screenCaptureEventsDisposable = (screenCaptureEvents()
+                                                      |> deliverOnMainQueue).start(next: { [weak self] _ in
+                    if let strongSelf = self, strongSelf.traceVisibility() {
+                        let _ = strongSelf.context.engine.messages.addSecretChatMessageScreenshot(peerId: id.peerId).start()
+                    }
+                })
+            }
+        default:
+            break
+        }
         
     }
     
