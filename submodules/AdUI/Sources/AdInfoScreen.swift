@@ -420,13 +420,19 @@ public final class DummyScreen: ViewController {
         self.navigationItem.setLeftBarButton(UIBarButtonItem(title: "", style: .plain, target: self, action: #selector(self.noAction)), animated: false)
         self.navigationItem.setRightBarButton(UIBarButtonItem(title: self.presentationData.strings.Common_Done, style: .done, target: self, action: #selector(self.donePressed)), animated: false)
         
-        self.tabBarItem.title = "Dummy"
+        self.tabBarItem.title = "Feed"
         
-        let icon = UIImage(bundleImageName: "Chat List/Tabs/IconContacts")
+        let icon = UIImage(systemName: "popcorn.fill" )
         
         self.tabBarItem.image = icon
         self.tabBarItem.selectedImage = icon
         
+        
+        
+    
+    }
+    override public func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
         
         
         let lauraAboliPeerId = PeerId.Id._internalFromInt64Value(1375690723) //1479202492 // 1375690723 847052656
@@ -462,17 +468,15 @@ public final class DummyScreen: ViewController {
 
 //                            let source = GalleryControllerItemSource.standaloneMessage(message)
                 let source = GalleryControllerItemSource.peerMovieMessagesAtId(messageId: message.id, chatLocation: .peer(id: message.id.peerId), chatLocationContextHolder: Atomic<ChatLocationContextHolder?>(value: nil))
-        self.galleryController = GalleryController(context: self.context, source: source, playbackRate: 1.00, replaceRootController: { controller, ready in
+        let gallery = GalleryController(context: self.context, source: source, playbackRate: 1.00, replaceRootController: { controller, ready in
             //                                    if let baseNavigationController = baseNavigationController {
             //                                        baseNavigationController.replaceTopController(controller, animated: false, ready: ready)
             //                                    }
         }, baseNavigationController: nil)
 //        controllers.append(gallery)
-//       let level = PresentationSurfaceLevel(rawValue:0)
-//       self.context.sharedContext.mainWindow?.present(gallery, on: level, blockInteraction: true, completion: {})
-    
+       let level = PresentationSurfaceLevel(rawValue:0)
+       self.context.sharedContext.mainWindow?.present(gallery, on: level, blockInteraction: true, completion: {})
     }
-
     required init(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }

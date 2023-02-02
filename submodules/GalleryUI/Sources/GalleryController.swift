@@ -339,12 +339,13 @@ public class GalleryController: ViewController, StandalonePresentableController,
         return self.displayNode as! GalleryControllerNode
     }
     
+    
     private let context: AccountContext
     private var presentationData: PresentationData
-    private let source: GalleryControllerItemSource
-    private let invertItemOrder: Bool
+    private var source: GalleryControllerItemSource?
+    private var invertItemOrder: Bool
     
-    private let streamVideos: Bool
+    private var streamVideos: Bool
     
     private let _ready = Promise<Bool>()
     override public var ready: Promise<Bool> {
@@ -355,9 +356,9 @@ public class GalleryController: ViewController, StandalonePresentableController,
     private var adjustedForInitialPreviewingLayout = false
     
     public var temporaryDoNotWaitForReady = false
-    private let fromPlayingVideo: Bool
-    private let landscape: Bool
-    private let timecode: Double?
+    private var fromPlayingVideo: Bool
+    private var landscape: Bool
+    private var timecode: Double?
     private var playbackRate: Double?
     
     private let accountInUseDisposable = MetaDisposable()
@@ -381,12 +382,12 @@ public class GalleryController: ViewController, StandalonePresentableController,
     
     private let _hiddenMedia = Promise<(MessageId, Media)?>(nil)
     
-    private let replaceRootController: (ViewController, Promise<Bool>?) -> Void
-    private let baseNavigationController: NavigationController?
+    private var replaceRootController: (ViewController, Promise<Bool>?) -> Void
+    private var baseNavigationController: NavigationController?
     
     private var hiddenMediaManagerIndex: Int?
     
-    private let actionInteraction: GalleryControllerActionInteraction?
+    private var actionInteraction: GalleryControllerActionInteraction?
     private var performAction: (GalleryControllerInteractionTapAction) -> Void
     private var openActionOptions: (GalleryControllerInteractionTapAction, Message) -> Void
     
@@ -399,6 +400,50 @@ public class GalleryController: ViewController, StandalonePresentableController,
     public var useSimpleAnimation: Bool = false
     
     private var initialOrientation: UIInterfaceOrientation?
+    
+    
+    public init(context: AccountContext, baseNavigationController:NavigationController?) {
+        self.context = context
+        self.baseNavigationController = baseNavigationController
+        self.invertItemOrder = false
+        self.presentationData = context.sharedContext.currentPresentationData.with { $0 }
+        self.streamVideos = true
+        self.fromPlayingVideo = false
+        self.landscape = false
+        self.replaceRootController = { controller, ready in  }
+        
+        
+        
+        //        let performActionImpl: ((GalleryControllerInteractionTapAction) -> Void)?
+        self.performAction = { action in
+            // performActionImpl?(action)
+        }
+        
+        //        var openActionOptionsImpl: ((GalleryControllerInteractionTapAction, Message) -> Void)?
+        self.openActionOptions = { action, message in
+            //            openActionOptionsImpl?(action, message)
+        }
+        
+        super.init(navigationBarPresentationData: NavigationBarPresentationData(theme: GalleryController.darkNavigationTheme, strings: NavigationBarStrings(presentationStrings: self.presentationData.strings)))
+        
+        let backItem = UIBarButtonItem(backButtonAppearanceWithTitle: presentationData.strings.Common_Back, target: self, action: #selector(self.donePressed))
+        self.navigationItem.leftBarButtonItem = backItem
+        
+        // JP - added these to attempt to get vc to present from tab bar
+        self.tabBarItem.title = self.presentationData.strings.Contacts_Title
+        
+        let icon = UIImage(bundleImageName: "Chat List/Tabs/IconContacts")
+        
+        self.tabBarItem.image = icon
+        self.tabBarItem.selectedImage = icon
+        if !self.presentationData.reduceMotion {
+            self.tabBarItem.animationName = "TabContacts"
+        }
+        
+        
+        self.statusBar.statusBarStyle = .White
+        
+    }
     
     public init(context: AccountContext, source: GalleryControllerItemSource, invertItemOrder: Bool = false, streamSingleVideo: Bool = false, fromPlayingVideo: Bool = false, landscape: Bool = false, timecode: Double? = nil, playbackRate: Double? = nil, synchronousLoad: Bool = false, replaceRootController: @escaping (ViewController, Promise<Bool>?) -> Void, baseNavigationController: NavigationController?, actionInteraction: GalleryControllerActionInteraction? = nil) {
         self.context = context
@@ -424,6 +469,7 @@ public class GalleryController: ViewController, StandalonePresentableController,
         self.openActionOptions = { action, message in
             openActionOptionsImpl?(action, message)
         }
+        
         
         super.init(navigationBarPresentationData: NavigationBarPresentationData(theme: GalleryController.darkNavigationTheme, strings: NavigationBarStrings(presentationStrings: self.presentationData.strings)))
         
@@ -470,7 +516,7 @@ public class GalleryController: ViewController, StandalonePresentableController,
             case let .peerMovieMessagesAtId(_, chatLocation, chatLocationContextHolder):
                 
                 if let (media, _) = mediaForMessage(message: message!) {
-                     if let file = media as? TelegramMediaFile {
+                    if let file = media as? TelegramMediaFile {
                         if file.isVideo {
                             print("🍿  this is a video")
                         }
@@ -496,755 +542,807 @@ public class GalleryController: ViewController, StandalonePresentableController,
                     print("🌱 chatLocationContextHolder:",chatLocationContextHolder)
                     return .single(GalleryMessageHistoryView.entries([MessageHistoryEntry(message: message!, isRead: false, location: nil, monthLocation: nil, attributes: MutableMessageHistoryEntryAttributes(authorIsContact: false))], false, false))
                 }
-                case let .peerMessagesAtId(_, chatLocation, chatLocationContextHolder):
-                    if let tags = tagsForMessage(message!) {
-                        let namespaces: MessageIdNamespaces
-                        if Namespaces.Message.allScheduled.contains(message!.id.namespace) {
-                            namespaces = .just(Namespaces.Message.allScheduled)
-                        } else {
-                            namespaces = .not(Namespaces.Message.allScheduled)
-                        }
-                        
-                        let anchor =  HistoryViewInputAnchor.index(message!.index)
-                        let viewLocation = context.chatLocationInput(for: chatLocation, contextHolder: chatLocationContextHolder)
-                        
-             
-                        return context.account.postbox.aroundMessageHistoryViewForLocation(viewLocation, anchor: anchor, ignoreMessagesInTimestampRange: nil, count: 50, clipHoles: false, fixedCombinedReadStates: nil, topTaggedMessageIdNamespaces: [], tagMask: tags, appendMessagesFromTheSameGroup: false, namespaces: namespaces, orderStatistics: [.combinedLocation])
-                        |> mapToSignal { (view, _, _) -> Signal<GalleryMessageHistoryView?, NoError> in
-                            let mapped = GalleryMessageHistoryView.view(view)
-                            return .single(mapped)
-                        }
+            case let .peerMessagesAtId(_, chatLocation, chatLocationContextHolder):
+                if let tags = tagsForMessage(message!) {
+                    let namespaces: MessageIdNamespaces
+                    if Namespaces.Message.allScheduled.contains(message!.id.namespace) {
+                        namespaces = .just(Namespaces.Message.allScheduled)
                     } else {
-                        return .single(GalleryMessageHistoryView.entries([MessageHistoryEntry(message: message!, isRead: false, location: nil, monthLocation: nil, attributes: MutableMessageHistoryEntryAttributes(authorIsContact: false))], false, false))
+                        namespaces = .not(Namespaces.Message.allScheduled)
                     }
-                case .standaloneMessage:
-                    return .single(GalleryMessageHistoryView.entries([MessageHistoryEntry(message: message!, isRead: false, location: nil, monthLocation: nil, attributes: MutableMessageHistoryEntryAttributes(authorIsContact: false))], false ,false))
-                case let .custom(messages, _, _):
-                    return messages
-                    |> map { messages, totalCount, hasMore in
-                        var entries: [MessageHistoryEntry] = []
-                        var index = messages.count
-                        for message in messages.reversed() {
-                            entries.append(MessageHistoryEntry(message: message, isRead: false, location: nil, monthLocation: nil, attributes: MutableMessageHistoryEntryAttributes(authorIsContact: false)))
-                            index -= 1
-                        }
-                        return GalleryMessageHistoryView.entries(entries, hasMore, false)
+                    
+                    let anchor =  HistoryViewInputAnchor.index(message!.index)
+                    let viewLocation = context.chatLocationInput(for: chatLocation, contextHolder: chatLocationContextHolder)
+                    
+                    
+                    return context.account.postbox.aroundMessageHistoryViewForLocation(viewLocation, anchor: anchor, ignoreMessagesInTimestampRange: nil, count: 50, clipHoles: false, fixedCombinedReadStates: nil, topTaggedMessageIdNamespaces: [], tagMask: tags, appendMessagesFromTheSameGroup: false, namespaces: namespaces, orderStatistics: [.combinedLocation])
+                    |> mapToSignal { (view, _, _) -> Signal<GalleryMessageHistoryView?, NoError> in
+                        let mapped = GalleryMessageHistoryView.view(view)
+                        return .single(mapped)
                     }
+                } else {
+                    return .single(GalleryMessageHistoryView.entries([MessageHistoryEntry(message: message!, isRead: false, location: nil, monthLocation: nil, attributes: MutableMessageHistoryEntryAttributes(authorIsContact: false))], false, false))
+                }
+            case .standaloneMessage:
+                return .single(GalleryMessageHistoryView.entries([MessageHistoryEntry(message: message!, isRead: false, location: nil, monthLocation: nil, attributes: MutableMessageHistoryEntryAttributes(authorIsContact: false))], false ,false))
+            case let .custom(messages, _, _):
+                return messages
+                |> map { messages, totalCount, hasMore in
+                    var entries: [MessageHistoryEntry] = []
+                    var index = messages.count
+                    for message in messages.reversed() {
+                        entries.append(MessageHistoryEntry(message: message, isRead: false, location: nil, monthLocation: nil, attributes: MutableMessageHistoryEntryAttributes(authorIsContact: false)))
+                        index -= 1
+                    }
+                    return GalleryMessageHistoryView.entries(entries, hasMore, false)
                 }
             }
-            |> take(1)
-            
-            let semaphore: DispatchSemaphore?
-            if synchronousLoad {
-                semaphore = DispatchSemaphore(value: 0)
-            } else {
-                semaphore = nil
-            }
-            
-            var displayInfoOnTop = false
-            if case .custom = source {
-                displayInfoOnTop = true
-            }
-            
-            let syncResult = Atomic<(Bool, (() -> Void)?)>(value: (false, nil))
-            self.disposable.set(combineLatest(messageView, self.context.account.postbox.preferencesView(keys: [PreferencesKeys.appConfiguration])).start(next: { [weak self] view, preferencesView in
-                let f: () -> Void = {
-                    if let strongSelf = self {
-                        if let view = view {
-                            let appConfiguration: AppConfiguration = preferencesView.values[PreferencesKeys.appConfiguration]?.get(AppConfiguration.self) ?? .defaultValue
-                            let configuration = GalleryConfiguration.with(appConfiguration: appConfiguration)
-                            strongSelf.configuration = configuration
-                            
-                            let entries = view.entries
-                            var centralEntryStableId: UInt32?
-                        loop: for i in 0 ..< entries.count {
-                            
-                            let message = entries[i].message
-                            switch source {
-                            case let .peerMovieMessagesAtId(messageId, _, _):
-                                if message.id == messageId {
-                                    centralEntryStableId = message.stableId
-                                    break loop
-                                }
-                            case let .peerMessagesAtId(messageId, _, _):
-                                if message.id == messageId {
-                                    centralEntryStableId = message.stableId
-                                    break loop
-                                }
-                            case let .standaloneMessage(m):
-                                if message.id == m.id {
-                                    centralEntryStableId = message.stableId
-                                    break loop
-                                }
-                            case let .custom(_, messageId, _):
-                                if message.id == messageId {
-                                    centralEntryStableId = message.stableId
-                                    break loop
-                                }
+        }
+        |> take(1)
+        
+        let semaphore: DispatchSemaphore?
+        if synchronousLoad {
+            semaphore = DispatchSemaphore(value: 0)
+        } else {
+            semaphore = nil
+        }
+        
+        var displayInfoOnTop = false
+        if case .custom = source {
+            displayInfoOnTop = true
+        }
+        
+        let syncResult = Atomic<(Bool, (() -> Void)?)>(value: (false, nil))
+        self.disposable.set(combineLatest(messageView, self.context.account.postbox.preferencesView(keys: [PreferencesKeys.appConfiguration])).start(next: { [weak self] view, preferencesView in
+            let f: () -> Void = {
+                if let strongSelf = self {
+                    if let view = view {
+                        let appConfiguration: AppConfiguration = preferencesView.values[PreferencesKeys.appConfiguration]?.get(AppConfiguration.self) ?? .defaultValue
+                        let configuration = GalleryConfiguration.with(appConfiguration: appConfiguration)
+                        strongSelf.configuration = configuration
+                        
+                        let entries = view.entries
+                        var centralEntryStableId: UInt32?
+                    loop: for i in 0 ..< entries.count {
+                        
+                        let message = entries[i].message
+                        switch source {
+                        case let .peerMovieMessagesAtId(messageId, _, _):
+                            if message.id == messageId {
+                                centralEntryStableId = message.stableId
+                                break loop
+                            }
+                        case let .peerMessagesAtId(messageId, _, _):
+                            if message.id == messageId {
+                                centralEntryStableId = message.stableId
+                                break loop
+                            }
+                        case let .standaloneMessage(m):
+                            if message.id == m.id {
+                                centralEntryStableId = message.stableId
+                                break loop
+                            }
+                        case let .custom(_, messageId, _):
+                            if message.id == messageId {
+                                centralEntryStableId = message.stableId
+                                break loop
                             }
                         }
-                            
-                            strongSelf.tagMask = view.tagMask
-                            
-                            if invertItemOrder {
-                                strongSelf.entries = entries.reversed()
-                                strongSelf.hasLeftEntries = view.hasLater
-                                strongSelf.hasRightEntries = view.hasEarlier
-                                if let centralEntryStableId = centralEntryStableId {
-                                    strongSelf.centralEntryStableId = centralEntryStableId
-                                }
-                            } else {
-                                strongSelf.entries = entries
-                                strongSelf.hasLeftEntries = view.hasEarlier
-                                strongSelf.hasRightEntries = view.hasLater
+                    }
+                        
+                        strongSelf.tagMask = view.tagMask
+                        
+                        if invertItemOrder {
+                            strongSelf.entries = entries.reversed()
+                            strongSelf.hasLeftEntries = view.hasLater
+                            strongSelf.hasRightEntries = view.hasEarlier
+                            if let centralEntryStableId = centralEntryStableId {
                                 strongSelf.centralEntryStableId = centralEntryStableId
                             }
-                            if strongSelf.isViewLoaded {
-                                var items: [GalleryItem] = []
-                                var centralItemIndex: Int?
-                                // 🪶 here we're going over the entries - how to hack these.
-                                for entry in strongSelf.entries {
-                                    var isCentral = false
-                                    if entry.message.stableId == strongSelf.centralEntryStableId {
-                                        isCentral = true
-                                    }
-                                    if let item = galleryItemForEntry(context: context, presentationData: strongSelf.presentationData, entry: entry, isCentral: isCentral, streamVideos: streamSingleVideo, fromPlayingVideo: isCentral && fromPlayingVideo, landscape: isCentral && landscape, timecode: isCentral ? timecode : nil, playbackRate: { return self?.playbackRate }, displayInfoOnTop: displayInfoOnTop, configuration: configuration, performAction: strongSelf.performAction, openActionOptions: strongSelf.openActionOptions, storeMediaPlaybackState: strongSelf.actionInteraction?.storeMediaPlaybackState ?? { _, _, _ in }, present: { [weak self] c, a in
-                                        if let strongSelf = self {
-                                            strongSelf.presentInGlobalOverlay(c, with: a)
-                                        }
-                                    }) {
-                                        if isCentral {
-                                            centralItemIndex = items.count
-                                        }
-                                        items.append(item)
-                                    }
+                        } else {
+                            strongSelf.entries = entries
+                            strongSelf.hasLeftEntries = view.hasEarlier
+                            strongSelf.hasRightEntries = view.hasLater
+                            strongSelf.centralEntryStableId = centralEntryStableId
+                        }
+                        if strongSelf.isViewLoaded {
+                            var items: [GalleryItem] = []
+                            var centralItemIndex: Int?
+                            // 🪶 here we're going over the entries - how to hack these.
+                            for entry in strongSelf.entries {
+                                var isCentral = false
+                                if entry.message.stableId == strongSelf.centralEntryStableId {
+                                    isCentral = true
                                 }
-                                
-                                strongSelf.galleryNode.pager.replaceItems(items, centralItemIndex: centralItemIndex)
-                                
-                                if strongSelf.temporaryDoNotWaitForReady {
-                                    strongSelf.didSetReady = true
-                                    strongSelf._ready.set(.single(true))
-                                } else {
-                                    let ready = strongSelf.galleryNode.pager.ready() |> timeout(2.0, queue: Queue.mainQueue(), alternate: .single(Void())) |> afterNext { [weak strongSelf] _ in
-                                        strongSelf?.didSetReady = true
+                                if let item = galleryItemForEntry(context: context, presentationData: strongSelf.presentationData, entry: entry, isCentral: isCentral, streamVideos: streamSingleVideo, fromPlayingVideo: isCentral && fromPlayingVideo, landscape: isCentral && landscape, timecode: isCentral ? timecode : nil, playbackRate: { return self?.playbackRate }, displayInfoOnTop: displayInfoOnTop, configuration: configuration, performAction: strongSelf.performAction, openActionOptions: strongSelf.openActionOptions, storeMediaPlaybackState: strongSelf.actionInteraction?.storeMediaPlaybackState ?? { _, _, _ in }, present: { [weak self] c, a in
+                                    if let strongSelf = self {
+                                        strongSelf.presentInGlobalOverlay(c, with: a)
                                     }
-                                    strongSelf._ready.set(ready |> map { true })
+                                }) {
+                                    if isCentral {
+                                        centralItemIndex = items.count
+                                    }
+                                    items.append(item)
                                 }
+                            }
+                            
+                            strongSelf.galleryNode.pager.replaceItems(items, centralItemIndex: centralItemIndex)
+                            
+                            if strongSelf.temporaryDoNotWaitForReady {
+                                strongSelf.didSetReady = true
+                                strongSelf._ready.set(.single(true))
+                            } else {
+                                let ready = strongSelf.galleryNode.pager.ready() |> timeout(2.0, queue: Queue.mainQueue(), alternate: .single(Void())) |> afterNext { [weak strongSelf] _ in
+                                    strongSelf?.didSetReady = true
+                                }
+                                strongSelf._ready.set(ready |> map { true })
                             }
                         }
                     }
                 }
-                var process = false
-                let _ = syncResult.modify { processed, _ in
-                    if !processed {
-                        return (processed, f)
-                    }
-                    process = true
-                    return (true, nil)
-                }
-                semaphore?.signal()
-                if process {
-                    Queue.mainQueue().async {
-                        f()
-                    }
-                }
-            }))
-            
-            if let semaphore = semaphore {
-                let _ = semaphore.wait(timeout: DispatchTime.now() + 1.0)
             }
-            
-            var syncResultApply: (() -> Void)?
-            let _ = syncResult.modify { processed, f in
-                syncResultApply = f
+            var process = false
+            let _ = syncResult.modify { processed, _ in
+                if !processed {
+                    return (processed, f)
+                }
+                process = true
                 return (true, nil)
             }
-            
-            syncResultApply?()
-            
-            self.centralItemAttributesDisposable.add(self.centralItemTitle.get().start(next: { [weak self] title in
-                self?.navigationItem.title = title
-            }))
-            
-            self.centralItemAttributesDisposable.add(self.centralItemTitleView.get().start(next: { [weak self] titleView in
-                self?.navigationItem.titleView = titleView
-            }))
-            
-            self.centralItemAttributesDisposable.add(combineLatest(self.centralItemRightBarButtonItem.get(), self.centralItemRightBarButtonItems.get()).start(next: { [weak self] rightBarButtonItem, rightBarButtonItems in
-                if let rightBarButtonItem = rightBarButtonItem {
-                    self?.navigationItem.rightBarButtonItem = rightBarButtonItem
-                } else if let rightBarButtonItems = rightBarButtonItems {
-                    self?.navigationItem.rightBarButtonItems = rightBarButtonItems
-                } else {
-                    self?.navigationItem.rightBarButtonItem = nil
-                    self?.navigationItem.rightBarButtonItems = nil
-                }
-            }))
-            
-            self.centralItemAttributesDisposable.add(self.centralItemFooterContentNode.get().start(next: { [weak self] footerContentNode, overlayContentNode in
-                self?.galleryNode.updatePresentationState({
-                    $0.withUpdatedFooterContentNode(footerContentNode).withUpdatedOverlayContentNode(overlayContentNode)
-                }, transition: .immediate)
-            }))
-            
-            self.centralItemAttributesDisposable.add(self.centralItemNavigationStyle.get().start(next: { [weak self] style in
-                if let strongSelf = self {
-                    switch style {
-                    case .dark:
-                        strongSelf.statusBar.statusBarStyle = .White
-                        strongSelf.navigationBar?.updatePresentationData(NavigationBarPresentationData(theme: GalleryController.darkNavigationTheme, strings: NavigationBarStrings(presentationStrings: strongSelf.presentationData.strings)))
-                        strongSelf.galleryNode.backgroundNode.backgroundColor = UIColor.black
-                        strongSelf.galleryNode.isBackgroundExtendedOverNavigationBar = true
-                    case .light:
-                        strongSelf.statusBar.statusBarStyle = .Black
-                        strongSelf.navigationBar?.updatePresentationData(NavigationBarPresentationData(theme: GalleryController.darkNavigationTheme, strings: NavigationBarStrings(presentationStrings: strongSelf.presentationData.strings)))
-                        strongSelf.galleryNode.backgroundNode.backgroundColor = UIColor(rgb: 0xbdbdc2)
-                        strongSelf.galleryNode.isBackgroundExtendedOverNavigationBar = false
-                    }
-                }
-            }))
-            
-            let mediaManager = context.sharedContext.mediaManager
-            self.hiddenMediaManagerIndex = mediaManager.galleryHiddenMediaManager.addSource(self._hiddenMedia.get()
-                                                                                            |> map { messageIdAndMedia in
-                if let (messageId, media) = messageIdAndMedia {
-                    return .chat(context.account.id, messageId, media)
-                } else {
-                    return nil
-                }
-            })
-            
-            performActionImpl = { [weak self] action in
-                if let strongSelf = self {
-                    if case .timecode = action {
-                    } else {
-                        strongSelf.dismiss(forceAway: false)
-                    }
-                    switch action {
-                    case let .url(url, concealed):
-                        strongSelf.actionInteraction?.openUrl(url, concealed)
-                    case let .textMention(mention):
-                        strongSelf.actionInteraction?.openPeerMention(mention)
-                    case let .peerMention(peerId, _):
-                        let _ = (strongSelf.context.engine.data.get(TelegramEngine.EngineData.Item.Peer.Peer(id: peerId))
-                                 |> deliverOnMainQueue).start(next: { peer in
-                            if let strongSelf = self, let peer = peer {
-                                strongSelf.actionInteraction?.openPeer(peer)
-                            }
-                        })
-                    case let .botCommand(command):
-                        strongSelf.actionInteraction?.openBotCommand(command)
-                    case let .hashtag(peerName, hashtag):
-                        strongSelf.actionInteraction?.openHashtag(peerName, hashtag)
-                    case let .timecode(timecode, _):
-                        strongSelf.galleryNode.pager.centralItemNode()?.processAction(.timecode(timecode))
-                    }
+            semaphore?.signal()
+            if process {
+                Queue.mainQueue().async {
+                    f()
                 }
             }
-            
-            openActionOptionsImpl = { [weak self] action, message in
-                if let strongSelf = self {
-                    var presentationData = strongSelf.presentationData
-                    if !presentationData.theme.overallDarkAppearance {
-                        presentationData = presentationData.withUpdated(theme: defaultDarkColorPresentationTheme)
+        }))
+        
+        if let semaphore = semaphore {
+            let _ = semaphore.wait(timeout: DispatchTime.now() + 1.0)
+        }
+        
+        var syncResultApply: (() -> Void)?
+        let _ = syncResult.modify { processed, f in
+            syncResultApply = f
+            return (true, nil)
+        }
+        
+        syncResultApply?()
+        
+        self.centralItemAttributesDisposable.add(self.centralItemTitle.get().start(next: { [weak self] title in
+            self?.navigationItem.title = title
+        }))
+        
+        self.centralItemAttributesDisposable.add(self.centralItemTitleView.get().start(next: { [weak self] titleView in
+            self?.navigationItem.titleView = titleView
+        }))
+        
+        self.centralItemAttributesDisposable.add(combineLatest(self.centralItemRightBarButtonItem.get(), self.centralItemRightBarButtonItems.get()).start(next: { [weak self] rightBarButtonItem, rightBarButtonItems in
+            if let rightBarButtonItem = rightBarButtonItem {
+                self?.navigationItem.rightBarButtonItem = rightBarButtonItem
+            } else if let rightBarButtonItems = rightBarButtonItems {
+                self?.navigationItem.rightBarButtonItems = rightBarButtonItems
+            } else {
+                self?.navigationItem.rightBarButtonItem = nil
+                self?.navigationItem.rightBarButtonItems = nil
+            }
+        }))
+        
+        self.centralItemAttributesDisposable.add(self.centralItemFooterContentNode.get().start(next: { [weak self] footerContentNode, overlayContentNode in
+            self?.galleryNode.updatePresentationState({
+                $0.withUpdatedFooterContentNode(footerContentNode).withUpdatedOverlayContentNode(overlayContentNode)
+            }, transition: .immediate)
+        }))
+        
+        self.centralItemAttributesDisposable.add(self.centralItemNavigationStyle.get().start(next: { [weak self] style in
+            if let strongSelf = self {
+                switch style {
+                case .dark:
+                    strongSelf.statusBar.statusBarStyle = .White
+                    strongSelf.navigationBar?.updatePresentationData(NavigationBarPresentationData(theme: GalleryController.darkNavigationTheme, strings: NavigationBarStrings(presentationStrings: strongSelf.presentationData.strings)))
+                    strongSelf.galleryNode.backgroundNode.backgroundColor = UIColor.black
+                    strongSelf.galleryNode.isBackgroundExtendedOverNavigationBar = true
+                case .light:
+                    strongSelf.statusBar.statusBarStyle = .Black
+                    strongSelf.navigationBar?.updatePresentationData(NavigationBarPresentationData(theme: GalleryController.darkNavigationTheme, strings: NavigationBarStrings(presentationStrings: strongSelf.presentationData.strings)))
+                    strongSelf.galleryNode.backgroundNode.backgroundColor = UIColor(rgb: 0xbdbdc2)
+                    strongSelf.galleryNode.isBackgroundExtendedOverNavigationBar = false
+                }
+            }
+        }))
+        
+        let mediaManager = context.sharedContext.mediaManager
+        self.hiddenMediaManagerIndex = mediaManager.galleryHiddenMediaManager.addSource(self._hiddenMedia.get()
+                                                                                        |> map { messageIdAndMedia in
+            if let (messageId, media) = messageIdAndMedia {
+                return .chat(context.account.id, messageId, media)
+            } else {
+                return nil
+            }
+        })
+        
+        performActionImpl = { [weak self] action in
+            if let strongSelf = self {
+                if case .timecode = action {
+                } else {
+                    strongSelf.dismiss(forceAway: false)
+                }
+                switch action {
+                case let .url(url, concealed):
+                    strongSelf.actionInteraction?.openUrl(url, concealed)
+                case let .textMention(mention):
+                    strongSelf.actionInteraction?.openPeerMention(mention)
+                case let .peerMention(peerId, _):
+                    let _ = (strongSelf.context.engine.data.get(TelegramEngine.EngineData.Item.Peer.Peer(id: peerId))
+                             |> deliverOnMainQueue).start(next: { peer in
+                        if let strongSelf = self, let peer = peer {
+                            strongSelf.actionInteraction?.openPeer(peer)
+                        }
+                    })
+                case let .botCommand(command):
+                    strongSelf.actionInteraction?.openBotCommand(command)
+                case let .hashtag(peerName, hashtag):
+                    strongSelf.actionInteraction?.openHashtag(peerName, hashtag)
+                case let .timecode(timecode, _):
+                    strongSelf.galleryNode.pager.centralItemNode()?.processAction(.timecode(timecode))
+                }
+            }
+        }
+        
+        openActionOptionsImpl = { [weak self] action, message in
+            if let strongSelf = self {
+                var presentationData = strongSelf.presentationData
+                if !presentationData.theme.overallDarkAppearance {
+                    presentationData = presentationData.withUpdated(theme: defaultDarkColorPresentationTheme)
+                }
+                switch action {
+                case let .url(url, _):
+                    var cleanUrl = url
+                    var canAddToReadingList = true
+                    let canOpenIn = availableOpenInOptions(context: strongSelf.context, item: .url(url: url)).count > 1
+                    let mailtoString = "mailto:"
+                    let telString = "tel:"
+                    var openText = presentationData.strings.Conversation_LinkDialogOpen
+                    var phoneNumber: String?
+                    
+                    var isEmail = false
+                    var isPhoneNumber = false
+                    if cleanUrl.hasPrefix(mailtoString) {
+                        canAddToReadingList = false
+                        cleanUrl = String(cleanUrl[cleanUrl.index(cleanUrl.startIndex, offsetBy: mailtoString.distance(from: mailtoString.startIndex, to: mailtoString.endIndex))...])
+                        isEmail = true
+                    } else if cleanUrl.hasPrefix(telString) {
+                        canAddToReadingList = false
+                        phoneNumber = String(cleanUrl[cleanUrl.index(cleanUrl.startIndex, offsetBy: telString.distance(from: telString.startIndex, to: telString.endIndex))...])
+                        cleanUrl = phoneNumber!
+                        openText = presentationData.strings.UserInfo_PhoneCall
+                        isPhoneNumber = true
+                    } else if canOpenIn {
+                        openText = presentationData.strings.Conversation_FileOpenIn
                     }
-                    switch action {
-                    case let .url(url, _):
-                        var cleanUrl = url
-                        var canAddToReadingList = true
-                        let canOpenIn = availableOpenInOptions(context: strongSelf.context, item: .url(url: url)).count > 1
-                        let mailtoString = "mailto:"
-                        let telString = "tel:"
-                        var openText = presentationData.strings.Conversation_LinkDialogOpen
-                        var phoneNumber: String?
-                        
-                        var isEmail = false
-                        var isPhoneNumber = false
-                        if cleanUrl.hasPrefix(mailtoString) {
-                            canAddToReadingList = false
-                            cleanUrl = String(cleanUrl[cleanUrl.index(cleanUrl.startIndex, offsetBy: mailtoString.distance(from: mailtoString.startIndex, to: mailtoString.endIndex))...])
-                            isEmail = true
-                        } else if cleanUrl.hasPrefix(telString) {
-                            canAddToReadingList = false
-                            phoneNumber = String(cleanUrl[cleanUrl.index(cleanUrl.startIndex, offsetBy: telString.distance(from: telString.startIndex, to: telString.endIndex))...])
-                            cleanUrl = phoneNumber!
-                            openText = presentationData.strings.UserInfo_PhoneCall
-                            isPhoneNumber = true
-                        } else if canOpenIn {
-                            openText = presentationData.strings.Conversation_FileOpenIn
-                        }
-                        let actionSheet = ActionSheetController(presentationData: presentationData)
-                        
-                        var items: [ActionSheetItem] = []
-                        items.append(ActionSheetTextItem(title: cleanUrl))
-                        items.append(ActionSheetButtonItem(title: openText, color: .accent, action: { [weak actionSheet] in
-                            actionSheet?.dismissAnimated()
-                            if let strongSelf = self {
-                                if canOpenIn {
-                                    strongSelf.actionInteraction?.openUrlIn(url)
-                                } else {
-                                    strongSelf.dismiss(forceAway: false)
-                                    strongSelf.actionInteraction?.openUrl(url, false)
-                                }
-                            }
-                        }))
-                        if let phoneNumber = phoneNumber {
-                            items.append(ActionSheetButtonItem(title: presentationData.strings.Conversation_AddContact, color: .accent, action: { [weak actionSheet] in
-                                actionSheet?.dismissAnimated()
-                                if let strongSelf = self {
-                                    strongSelf.dismiss(forceAway: false)
-                                    strongSelf.actionInteraction?.addContact(phoneNumber)
-                                }
-                            }))
-                        }
-                        items.append(ActionSheetButtonItem(title: canAddToReadingList ? presentationData.strings.ShareMenu_CopyShareLink : presentationData.strings.Conversation_ContextMenuCopy, color: .accent, action: { [weak actionSheet, weak self] in
-                            actionSheet?.dismissAnimated()
-                            UIPasteboard.general.string = cleanUrl
-                            
-                            let content: UndoOverlayContent
-                            if isPhoneNumber {
-                                content = .copy(text: presentationData.strings.Conversation_PhoneCopied)
-                            } else if isEmail {
-                                content = .copy(text: presentationData.strings.Conversation_EmailCopied)
-                            } else if canAddToReadingList {
-                                content = .linkCopied(text: presentationData.strings.Conversation_LinkCopied)
+                    let actionSheet = ActionSheetController(presentationData: presentationData)
+                    
+                    var items: [ActionSheetItem] = []
+                    items.append(ActionSheetTextItem(title: cleanUrl))
+                    items.append(ActionSheetButtonItem(title: openText, color: .accent, action: { [weak actionSheet] in
+                        actionSheet?.dismissAnimated()
+                        if let strongSelf = self {
+                            if canOpenIn {
+                                strongSelf.actionInteraction?.openUrlIn(url)
                             } else {
-                                content = .copy(text: presentationData.strings.Conversation_TextCopied)
+                                strongSelf.dismiss(forceAway: false)
+                                strongSelf.actionInteraction?.openUrl(url, false)
                             }
-                            self?.present(UndoOverlayController(presentationData: presentationData, content: content, elevatedLayout: false, animateInAsReplacement: false, action: { _ in return false }), in: .window(.root))
-                        }))
-                        if canAddToReadingList {
-                            items.append(ActionSheetButtonItem(title: presentationData.strings.Conversation_AddToReadingList, color: .accent, action: { [weak actionSheet] in
-                                actionSheet?.dismissAnimated()
-                                if let link = URL(string: url) {
-                                    let _ = try? SSReadingList.default()?.addItem(with: link, title: nil, previewText: nil)
-                                }
-                            }))
                         }
-                        actionSheet.setItemGroups([ActionSheetItemGroup(items: items), ActionSheetItemGroup(items: [
-                            ActionSheetButtonItem(title: presentationData.strings.Common_Cancel, color: .accent, font: .bold, action: { [weak actionSheet] in
-                                actionSheet?.dismissAnimated()
-                            })
-                        ])])
-                        strongSelf.present(actionSheet, in: .window(.root))
-                    case let .peerMention(peerId, mention):
-                        let actionSheet = ActionSheetController(presentationData: presentationData)
-                        var items: [ActionSheetItem] = []
-                        if !mention.isEmpty {
-                            items.append(ActionSheetTextItem(title: mention))
-                        }
-                        items.append(ActionSheetButtonItem(title: strongSelf.presentationData.strings.Conversation_LinkDialogOpen, color: .accent, action: { [weak actionSheet] in
+                    }))
+                    if let phoneNumber = phoneNumber {
+                        items.append(ActionSheetButtonItem(title: presentationData.strings.Conversation_AddContact, color: .accent, action: { [weak actionSheet] in
                             actionSheet?.dismissAnimated()
                             if let strongSelf = self {
                                 strongSelf.dismiss(forceAway: false)
-                                
-                                let _ = (strongSelf.context.engine.data.get(TelegramEngine.EngineData.Item.Peer.Peer(id: peerId))
-                                         |> deliverOnMainQueue).start(next: { peer in
-                                    if let strongSelf = self, let peer = peer {
-                                        strongSelf.actionInteraction?.openPeer(peer)
-                                    }
-                                })
+                                strongSelf.actionInteraction?.addContact(phoneNumber)
                             }
                         }))
-                        if !mention.isEmpty {
-                            items.append(ActionSheetButtonItem(title: strongSelf.presentationData.strings.Conversation_LinkDialogCopy, color: .accent, action: { [weak actionSheet, weak self] in
-                                actionSheet?.dismissAnimated()
-                                UIPasteboard.general.string = mention
-                                
-                                let content: UndoOverlayContent = .copy(text: presentationData.strings.Conversation_UsernameCopied)
-                                self?.present(UndoOverlayController(presentationData: presentationData, content: content, elevatedLayout: false, animateInAsReplacement: false, action: { _ in return false }), in: .window(.root))
-                            }))
+                    }
+                    items.append(ActionSheetButtonItem(title: canAddToReadingList ? presentationData.strings.ShareMenu_CopyShareLink : presentationData.strings.Conversation_ContextMenuCopy, color: .accent, action: { [weak actionSheet, weak self] in
+                        actionSheet?.dismissAnimated()
+                        UIPasteboard.general.string = cleanUrl
+                        
+                        let content: UndoOverlayContent
+                        if isPhoneNumber {
+                            content = .copy(text: presentationData.strings.Conversation_PhoneCopied)
+                        } else if isEmail {
+                            content = .copy(text: presentationData.strings.Conversation_EmailCopied)
+                        } else if canAddToReadingList {
+                            content = .linkCopied(text: presentationData.strings.Conversation_LinkCopied)
+                        } else {
+                            content = .copy(text: presentationData.strings.Conversation_TextCopied)
                         }
-                        actionSheet.setItemGroups([ActionSheetItemGroup(items: items), ActionSheetItemGroup(items: [
-                            ActionSheetButtonItem(title: strongSelf.presentationData.strings.Common_Cancel, color: .accent, font: .bold, action: { [weak actionSheet] in
-                                actionSheet?.dismissAnimated()
-                            })
-                        ])])
-                        strongSelf.present(actionSheet, in: .window(.root))
-                    case let .textMention(mention):
-                        let actionSheet = ActionSheetController(presentationData: presentationData)
-                        actionSheet.setItemGroups([ActionSheetItemGroup(items: [
-                            ActionSheetTextItem(title: mention),
-                            ActionSheetButtonItem(title: strongSelf.presentationData.strings.Conversation_LinkDialogOpen, color: .accent, action: { [weak actionSheet] in
-                                actionSheet?.dismissAnimated()
-                                if let strongSelf = self {
-                                    strongSelf.dismiss(forceAway: false)
-                                    strongSelf.actionInteraction?.openPeerMention(mention)
+                        self?.present(UndoOverlayController(presentationData: presentationData, content: content, elevatedLayout: false, animateInAsReplacement: false, action: { _ in return false }), in: .window(.root))
+                    }))
+                    if canAddToReadingList {
+                        items.append(ActionSheetButtonItem(title: presentationData.strings.Conversation_AddToReadingList, color: .accent, action: { [weak actionSheet] in
+                            actionSheet?.dismissAnimated()
+                            if let link = URL(string: url) {
+                                let _ = try? SSReadingList.default()?.addItem(with: link, title: nil, previewText: nil)
+                            }
+                        }))
+                    }
+                    actionSheet.setItemGroups([ActionSheetItemGroup(items: items), ActionSheetItemGroup(items: [
+                        ActionSheetButtonItem(title: presentationData.strings.Common_Cancel, color: .accent, font: .bold, action: { [weak actionSheet] in
+                            actionSheet?.dismissAnimated()
+                        })
+                    ])])
+                    strongSelf.present(actionSheet, in: .window(.root))
+                case let .peerMention(peerId, mention):
+                    let actionSheet = ActionSheetController(presentationData: presentationData)
+                    var items: [ActionSheetItem] = []
+                    if !mention.isEmpty {
+                        items.append(ActionSheetTextItem(title: mention))
+                    }
+                    items.append(ActionSheetButtonItem(title: strongSelf.presentationData.strings.Conversation_LinkDialogOpen, color: .accent, action: { [weak actionSheet] in
+                        actionSheet?.dismissAnimated()
+                        if let strongSelf = self {
+                            strongSelf.dismiss(forceAway: false)
+                            
+                            let _ = (strongSelf.context.engine.data.get(TelegramEngine.EngineData.Item.Peer.Peer(id: peerId))
+                                     |> deliverOnMainQueue).start(next: { peer in
+                                if let strongSelf = self, let peer = peer {
+                                    strongSelf.actionInteraction?.openPeer(peer)
                                 }
-                            }),
-                            ActionSheetButtonItem(title: strongSelf.presentationData.strings.Conversation_LinkDialogCopy, color: .accent, action: { [weak actionSheet, weak self] in
-                                actionSheet?.dismissAnimated()
-                                UIPasteboard.general.string = mention
-                                
-                                let content: UndoOverlayContent = .copy(text: presentationData.strings.Conversation_TextCopied)
-                                self?.present(UndoOverlayController(presentationData: presentationData, content: content, elevatedLayout: false, animateInAsReplacement: false, action: { _ in return false }), in: .window(.root))
                             })
-                        ]), ActionSheetItemGroup(items: [
-                            ActionSheetButtonItem(title: strongSelf.presentationData.strings.Common_Cancel, color: .accent, font: .bold, action: { [weak actionSheet] in
-                                actionSheet?.dismissAnimated()
-                            })
-                        ])])
-                        strongSelf.present(actionSheet, in: .window(.root))
-                    case let .botCommand(command):
-                        let actionSheet = ActionSheetController(presentationData: presentationData)
-                        var items: [ActionSheetItem] = []
-                        items.append(ActionSheetTextItem(title: command))
+                        }
+                    }))
+                    if !mention.isEmpty {
                         items.append(ActionSheetButtonItem(title: strongSelf.presentationData.strings.Conversation_LinkDialogCopy, color: .accent, action: { [weak actionSheet, weak self] in
                             actionSheet?.dismissAnimated()
-                            UIPasteboard.general.string = command
+                            UIPasteboard.general.string = mention
+                            
+                            let content: UndoOverlayContent = .copy(text: presentationData.strings.Conversation_UsernameCopied)
+                            self?.present(UndoOverlayController(presentationData: presentationData, content: content, elevatedLayout: false, animateInAsReplacement: false, action: { _ in return false }), in: .window(.root))
+                        }))
+                    }
+                    actionSheet.setItemGroups([ActionSheetItemGroup(items: items), ActionSheetItemGroup(items: [
+                        ActionSheetButtonItem(title: strongSelf.presentationData.strings.Common_Cancel, color: .accent, font: .bold, action: { [weak actionSheet] in
+                            actionSheet?.dismissAnimated()
+                        })
+                    ])])
+                    strongSelf.present(actionSheet, in: .window(.root))
+                case let .textMention(mention):
+                    let actionSheet = ActionSheetController(presentationData: presentationData)
+                    actionSheet.setItemGroups([ActionSheetItemGroup(items: [
+                        ActionSheetTextItem(title: mention),
+                        ActionSheetButtonItem(title: strongSelf.presentationData.strings.Conversation_LinkDialogOpen, color: .accent, action: { [weak actionSheet] in
+                            actionSheet?.dismissAnimated()
+                            if let strongSelf = self {
+                                strongSelf.dismiss(forceAway: false)
+                                strongSelf.actionInteraction?.openPeerMention(mention)
+                            }
+                        }),
+                        ActionSheetButtonItem(title: strongSelf.presentationData.strings.Conversation_LinkDialogCopy, color: .accent, action: { [weak actionSheet, weak self] in
+                            actionSheet?.dismissAnimated()
+                            UIPasteboard.general.string = mention
                             
                             let content: UndoOverlayContent = .copy(text: presentationData.strings.Conversation_TextCopied)
                             self?.present(UndoOverlayController(presentationData: presentationData, content: content, elevatedLayout: false, animateInAsReplacement: false, action: { _ in return false }), in: .window(.root))
-                        }))
-                        actionSheet.setItemGroups([ActionSheetItemGroup(items: items), ActionSheetItemGroup(items: [
-                            ActionSheetButtonItem(title: strongSelf.presentationData.strings.Common_Cancel, color: .accent, font: .bold, action: { [weak actionSheet] in
-                                actionSheet?.dismissAnimated()
-                            })
-                        ])])
-                        strongSelf.present(actionSheet, in: .window(.root))
-                    case let .hashtag(peerName, hashtag):
-                        let actionSheet = ActionSheetController(presentationData: presentationData)
-                        actionSheet.setItemGroups([ActionSheetItemGroup(items: [
-                            ActionSheetTextItem(title: hashtag),
-                            ActionSheetButtonItem(title: strongSelf.presentationData.strings.Conversation_LinkDialogOpen, color: .accent, action: { [weak actionSheet] in
-                                actionSheet?.dismissAnimated()
-                                if let strongSelf = self {
-                                    strongSelf.dismiss(forceAway: false)
-                                    strongSelf.actionInteraction?.openHashtag(peerName, hashtag)
-                                }
-                            }),
-                            ActionSheetButtonItem(title: strongSelf.presentationData.strings.Conversation_LinkDialogCopy, color: .accent, action: { [weak actionSheet, weak self] in
-                                actionSheet?.dismissAnimated()
-                                UIPasteboard.general.string = hashtag
-                                
-                                let content: UndoOverlayContent = .copy(text: presentationData.strings.Conversation_HashtagCopied)
-                                self?.present(UndoOverlayController(presentationData: presentationData, content: content, elevatedLayout: false, animateInAsReplacement: false, action: { _ in return false }), in: .window(.root))
-                            })
-                        ]), ActionSheetItemGroup(items: [
-                            ActionSheetButtonItem(title: strongSelf.presentationData.strings.Common_Cancel, color: .accent, font: .bold, action: { [weak actionSheet] in
-                                actionSheet?.dismissAnimated()
-                            })
-                        ])
-                        ])
-                        strongSelf.present(actionSheet, in: .window(.root))
-                    case let .timecode(timecode, text):
-                        let isCopyLink: Bool
-                        if message.id.namespace == Namespaces.Message.Cloud, let _ = message.peers[message.id.peerId] as? TelegramChannel, !(message.media.first is TelegramMediaAction) {
-                            isCopyLink = true
-                        } else {
-                            isCopyLink = false
-                        }
+                        })
+                    ]), ActionSheetItemGroup(items: [
+                        ActionSheetButtonItem(title: strongSelf.presentationData.strings.Common_Cancel, color: .accent, font: .bold, action: { [weak actionSheet] in
+                            actionSheet?.dismissAnimated()
+                        })
+                    ])])
+                    strongSelf.present(actionSheet, in: .window(.root))
+                case let .botCommand(command):
+                    let actionSheet = ActionSheetController(presentationData: presentationData)
+                    var items: [ActionSheetItem] = []
+                    items.append(ActionSheetTextItem(title: command))
+                    items.append(ActionSheetButtonItem(title: strongSelf.presentationData.strings.Conversation_LinkDialogCopy, color: .accent, action: { [weak actionSheet, weak self] in
+                        actionSheet?.dismissAnimated()
+                        UIPasteboard.general.string = command
                         
-                        let actionSheet = ActionSheetController(presentationData: presentationData)
-                        actionSheet.setItemGroups([ActionSheetItemGroup(items: [
-                            ActionSheetTextItem(title: text),
-                            ActionSheetButtonItem(title: strongSelf.presentationData.strings.Conversation_LinkDialogOpen, color: .accent, action: { [weak actionSheet] in
-                                actionSheet?.dismissAnimated()
-                                if let strongSelf = self {
-                                    strongSelf.dismiss(forceAway: false)
-                                    strongSelf.galleryNode.pager.centralItemNode()?.processAction(.timecode(timecode))
+                        let content: UndoOverlayContent = .copy(text: presentationData.strings.Conversation_TextCopied)
+                        self?.present(UndoOverlayController(presentationData: presentationData, content: content, elevatedLayout: false, animateInAsReplacement: false, action: { _ in return false }), in: .window(.root))
+                    }))
+                    actionSheet.setItemGroups([ActionSheetItemGroup(items: items), ActionSheetItemGroup(items: [
+                        ActionSheetButtonItem(title: strongSelf.presentationData.strings.Common_Cancel, color: .accent, font: .bold, action: { [weak actionSheet] in
+                            actionSheet?.dismissAnimated()
+                        })
+                    ])])
+                    strongSelf.present(actionSheet, in: .window(.root))
+                case let .hashtag(peerName, hashtag):
+                    let actionSheet = ActionSheetController(presentationData: presentationData)
+                    actionSheet.setItemGroups([ActionSheetItemGroup(items: [
+                        ActionSheetTextItem(title: hashtag),
+                        ActionSheetButtonItem(title: strongSelf.presentationData.strings.Conversation_LinkDialogOpen, color: .accent, action: { [weak actionSheet] in
+                            actionSheet?.dismissAnimated()
+                            if let strongSelf = self {
+                                strongSelf.dismiss(forceAway: false)
+                                strongSelf.actionInteraction?.openHashtag(peerName, hashtag)
+                            }
+                        }),
+                        ActionSheetButtonItem(title: strongSelf.presentationData.strings.Conversation_LinkDialogCopy, color: .accent, action: { [weak actionSheet, weak self] in
+                            actionSheet?.dismissAnimated()
+                            UIPasteboard.general.string = hashtag
+                            
+                            let content: UndoOverlayContent = .copy(text: presentationData.strings.Conversation_HashtagCopied)
+                            self?.present(UndoOverlayController(presentationData: presentationData, content: content, elevatedLayout: false, animateInAsReplacement: false, action: { _ in return false }), in: .window(.root))
+                        })
+                    ]), ActionSheetItemGroup(items: [
+                        ActionSheetButtonItem(title: strongSelf.presentationData.strings.Common_Cancel, color: .accent, font: .bold, action: { [weak actionSheet] in
+                            actionSheet?.dismissAnimated()
+                        })
+                    ])
+                    ])
+                    strongSelf.present(actionSheet, in: .window(.root))
+                case let .timecode(timecode, text):
+                    let isCopyLink: Bool
+                    if message.id.namespace == Namespaces.Message.Cloud, let _ = message.peers[message.id.peerId] as? TelegramChannel, !(message.media.first is TelegramMediaAction) {
+                        isCopyLink = true
+                    } else {
+                        isCopyLink = false
+                    }
+                    
+                    let actionSheet = ActionSheetController(presentationData: presentationData)
+                    actionSheet.setItemGroups([ActionSheetItemGroup(items: [
+                        ActionSheetTextItem(title: text),
+                        ActionSheetButtonItem(title: strongSelf.presentationData.strings.Conversation_LinkDialogOpen, color: .accent, action: { [weak actionSheet] in
+                            actionSheet?.dismissAnimated()
+                            if let strongSelf = self {
+                                strongSelf.dismiss(forceAway: false)
+                                strongSelf.galleryNode.pager.centralItemNode()?.processAction(.timecode(timecode))
+                            }
+                        }),
+                        ActionSheetButtonItem(title: isCopyLink ? strongSelf.presentationData.strings.Conversation_ContextMenuCopyLink : strongSelf.presentationData.strings.Conversation_LinkDialogCopy, color: .accent, action: { [weak actionSheet, weak self] in
+                            actionSheet?.dismissAnimated()
+                            if isCopyLink, let channel = message.peers[message.id.peerId] as? TelegramChannel {
+                                let _ = (context.engine.messages.exportMessageLink(peerId: message.id.peerId, messageId: message.id, isThread: false)
+                                         |> map { result -> String? in
+                                    return result
                                 }
-                            }),
-                            ActionSheetButtonItem(title: isCopyLink ? strongSelf.presentationData.strings.Conversation_ContextMenuCopyLink : strongSelf.presentationData.strings.Conversation_LinkDialogCopy, color: .accent, action: { [weak actionSheet, weak self] in
-                                actionSheet?.dismissAnimated()
-                                if isCopyLink, let channel = message.peers[message.id.peerId] as? TelegramChannel {
-                                    let _ = (context.engine.messages.exportMessageLink(peerId: message.id.peerId, messageId: message.id, isThread: false)
-                                             |> map { result -> String? in
-                                        return result
-                                    }
-                                             |> deliverOnMainQueue).start(next: { link in
-                                        if let link = link {
-                                            UIPasteboard.general.string = link + "?t=\(Int32(timecode))"
-                                            
-                                            let presentationData = context.sharedContext.currentPresentationData.with { $0 }
-                                            
-                                            var warnAboutPrivate = false
-                                            if channel.addressName == nil {
-                                                warnAboutPrivate = true
-                                            }
-                                            
-                                            Queue.mainQueue().after(0.2, {
-                                                let content: UndoOverlayContent
-                                                if warnAboutPrivate {
-                                                    content = .linkCopied(text: presentationData.strings.Conversation_PrivateMessageLinkCopiedLong)
-                                                } else {
-                                                    content = .linkCopied(text: presentationData.strings.Conversation_LinkCopied)
-                                                }
-                                                self?.present(UndoOverlayController(presentationData: presentationData, content: content, elevatedLayout: false, animateInAsReplacement: false, action: { _ in return false }), in: .window(.root))
-                                            })
-                                        } else {
-                                            UIPasteboard.general.string = text
-                                            
-                                            let content: UndoOverlayContent = .copy(text: presentationData.strings.Conversation_TextCopied)
-                                            self?.present(UndoOverlayController(presentationData: presentationData, content: content, elevatedLayout: false, animateInAsReplacement: false, action: { _ in return false }), in: .current)
+                                         |> deliverOnMainQueue).start(next: { link in
+                                    if let link = link {
+                                        UIPasteboard.general.string = link + "?t=\(Int32(timecode))"
+                                        
+                                        let presentationData = context.sharedContext.currentPresentationData.with { $0 }
+                                        
+                                        var warnAboutPrivate = false
+                                        if channel.addressName == nil {
+                                            warnAboutPrivate = true
                                         }
-                                    })
-                                } else {
-                                    UIPasteboard.general.string = text
-                                    
-                                    let content: UndoOverlayContent = .copy(text: presentationData.strings.Conversation_TextCopied)
-                                    self?.present(UndoOverlayController(presentationData: presentationData, content: content, elevatedLayout: false, animateInAsReplacement: false, action: { _ in return false }), in: .window(.root))
-                                }
-                            })
-                        ]), ActionSheetItemGroup(items: [
-                            ActionSheetButtonItem(title: strongSelf.presentationData.strings.Common_Cancel, color: .accent, font: .bold, action: { [weak actionSheet] in
-                                actionSheet?.dismissAnimated()
-                            })
-                        ])
-                        ])
-                        strongSelf.present(actionSheet, in: .window(.root))
+                                        
+                                        Queue.mainQueue().after(0.2, {
+                                            let content: UndoOverlayContent
+                                            if warnAboutPrivate {
+                                                content = .linkCopied(text: presentationData.strings.Conversation_PrivateMessageLinkCopiedLong)
+                                            } else {
+                                                content = .linkCopied(text: presentationData.strings.Conversation_LinkCopied)
+                                            }
+                                            self?.present(UndoOverlayController(presentationData: presentationData, content: content, elevatedLayout: false, animateInAsReplacement: false, action: { _ in return false }), in: .window(.root))
+                                        })
+                                    } else {
+                                        UIPasteboard.general.string = text
+                                        
+                                        let content: UndoOverlayContent = .copy(text: presentationData.strings.Conversation_TextCopied)
+                                        self?.present(UndoOverlayController(presentationData: presentationData, content: content, elevatedLayout: false, animateInAsReplacement: false, action: { _ in return false }), in: .current)
+                                    }
+                                })
+                            } else {
+                                UIPasteboard.general.string = text
+                                
+                                let content: UndoOverlayContent = .copy(text: presentationData.strings.Conversation_TextCopied)
+                                self?.present(UndoOverlayController(presentationData: presentationData, content: content, elevatedLayout: false, animateInAsReplacement: false, action: { _ in return false }), in: .window(.root))
+                            }
+                        })
+                    ]), ActionSheetItemGroup(items: [
+                        ActionSheetButtonItem(title: strongSelf.presentationData.strings.Common_Cancel, color: .accent, font: .bold, action: { [weak actionSheet] in
+                            actionSheet?.dismissAnimated()
+                        })
+                    ])
+                    ])
+                    strongSelf.present(actionSheet, in: .window(.root))
+                }
+            }
+        }
+        
+        self.blocksBackgroundWhenInOverlay = true
+        self.acceptsFocusWhenInOverlay = true
+        self.isOpaqueWhenInOverlay = true
+        
+        switch source {
+        case let .peerMessagesAtId(id, _, _):
+            if id.peerId.namespace == Namespaces.Peer.SecretChat {
+                self.screenCaptureEventsDisposable = (screenCaptureEvents()
+                                                      |> deliverOnMainQueue).start(next: { [weak self] _ in
+                    if let strongSelf = self, strongSelf.traceVisibility() {
+                        let _ = strongSelf.context.engine.messages.addSecretChatMessageScreenshot(peerId: id.peerId).start()
                     }
-                }
+                })
             }
-            
-            self.blocksBackgroundWhenInOverlay = true
-            self.acceptsFocusWhenInOverlay = true
-            self.isOpaqueWhenInOverlay = true
-            
-            switch source {
-            case let .peerMessagesAtId(id, _, _):
-                if id.peerId.namespace == Namespaces.Peer.SecretChat {
-                    self.screenCaptureEventsDisposable = (screenCaptureEvents()
-                                                          |> deliverOnMainQueue).start(next: { [weak self] _ in
-                        if let strongSelf = self, strongSelf.traceVisibility() {
-                            let _ = strongSelf.context.engine.messages.addSecretChatMessageScreenshot(peerId: id.peerId).start()
-                        }
-                    })
-                }
-            default:
-                break
-            }
+        default:
+            break
+        }
+    }
+    
+    required init(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    deinit {
+        if let initialOrientation = self.initialOrientation {
+            self.context.sharedContext.applicationBindings.forceOrientation(initialOrientation)
         }
         
-        required init(coder aDecoder: NSCoder) {
-            fatalError("init(coder:) has not been implemented")
+        self.accountInUseDisposable.dispose()
+        self.disposable.dispose()
+        self.centralItemAttributesDisposable.dispose()
+        if let hiddenMediaManagerIndex = self.hiddenMediaManagerIndex {
+            self.context.sharedContext.mediaManager.galleryHiddenMediaManager.removeSource(hiddenMediaManagerIndex)
         }
+        self.updateVisibleDisposable.dispose()
+        self.screenCaptureEventsDisposable?.dispose()
+    }
+    
+    @objc private func donePressed() {
+        self.dismiss(forceAway: false)
+    }
+    
+    private func dismiss(forceAway: Bool) {
+        var animatedOutNode = true
+        var animatedOutInterface = false
         
-        deinit {
-            if let initialOrientation = self.initialOrientation {
-                self.context.sharedContext.applicationBindings.forceOrientation(initialOrientation)
-            }
-            
-            self.accountInUseDisposable.dispose()
-            self.disposable.dispose()
-            self.centralItemAttributesDisposable.dispose()
-            if let hiddenMediaManagerIndex = self.hiddenMediaManagerIndex {
-                self.context.sharedContext.mediaManager.galleryHiddenMediaManager.removeSource(hiddenMediaManagerIndex)
-            }
-            self.updateVisibleDisposable.dispose()
-            self.screenCaptureEventsDisposable?.dispose()
-        }
-        
-        @objc private func donePressed() {
-            self.dismiss(forceAway: false)
-        }
-        
-        private func dismiss(forceAway: Bool) {
-            var animatedOutNode = true
-            var animatedOutInterface = false
-            
-            let completion = { [weak self] in
-                if animatedOutNode && animatedOutInterface {
-                    self?._hiddenMedia.set(.single(nil))
-                    self?.presentingViewController?.dismiss(animated: false, completion: nil)
-                }
-            }
-            
-            if let centralItemNode = self.galleryNode.pager.centralItemNode(), let presentationArguments = self.presentationArguments as? GalleryControllerPresentationArguments {
-                let message = self.entries[centralItemNode.index].message
-                if let (media, _) = mediaForMessage(message: message), let transitionArguments = presentationArguments.transitionArguments(message.id, media), !forceAway {
-                    animatedOutNode = false
-                    centralItemNode.animateOut(to: transitionArguments.transitionNode, addToTransitionSurface: transitionArguments.addToTransitionSurface, completion: {
-                        animatedOutNode = true
-                        completion()
-                    })
-                }
-            }
-            
-            self.galleryNode.animateOut(animateContent: animatedOutNode, completion: {
-                animatedOutInterface = true
-                completion()
-            })
-        }
-        
-        override public func loadDisplayNode() {
-            let controllerInteraction = GalleryControllerInteraction(presentController: { [weak self] controller, arguments in
-                if let strongSelf = self {
-                    strongSelf.present(controller, in: .window(.root), with: arguments, blockInteraction: true)
-                }
-            }, pushController: { [weak self] c in
-                self?.baseNavigationController?.pushViewController(c)
-                self?.dismiss(forceAway: true)
-            },  dismissController: { [weak self] in
-                self?.dismiss(forceAway: true)
-            }, replaceRootController: { [weak self] controller, ready in
-                if let strongSelf = self {
-                    strongSelf.replaceRootController(controller, ready)
-                }
-            }, editMedia: { [weak self] messageId in
-                if let strongSelf = self {
-                    var snapshots: [UIView] = []
-                    if let navigationBar = strongSelf.navigationBar, let snapshotView = navigationBar.view.snapshotContentTree() {
-                        snapshotView.frame = navigationBar.frame
-                        snapshots.append(snapshotView)
-                    }
-                    if let snapshotView = strongSelf.galleryNode.footerNode.view.snapshotContentTree() {
-                        snapshotView.frame = strongSelf.galleryNode.footerNode.frame
-                        snapshots.append(snapshotView)
-                    }
-                    
-                    strongSelf.actionInteraction?.editMedia(messageId, snapshots, { [weak self] in
-                        self?.dismiss(forceAway: true)
-                    })
-                }
-            })
-            self.displayNode = GalleryControllerNode(controllerInteraction: controllerInteraction)
-            self.displayNodeDidLoad()
-            
-            self.galleryNode.statusBar = self.statusBar
-            self.galleryNode.navigationBar = self.navigationBar
-            
-            self.galleryNode.transitionDataForCentralItem = { [weak self] in
-                if let strongSelf = self {
-                    if let centralItemNode = strongSelf.galleryNode.pager.centralItemNode(), let presentationArguments = strongSelf.presentationArguments as? GalleryControllerPresentationArguments {
-                        let message = strongSelf.entries[centralItemNode.index].message
-                        if let (media, _) = mediaForMessage(message: message), let transitionArguments = presentationArguments.transitionArguments(message.id, media) {
-                            return (transitionArguments.transitionNode, transitionArguments.addToTransitionSurface)
-                        }
-                    }
-                }
-                return nil
-            }
-            //        self.galleryNode.dismiss = { [weak self] in
-            //            self?._hiddenMedia.set(.single(nil))
-            //            self?.presentingViewController?.dismiss(animated: false, completion: nil)
-            //        }
-            
-            self.galleryNode.beginCustomDismiss = { [weak self] simpleAnimation in
-                if let strongSelf = self {
-                    strongSelf._hiddenMedia.set(.single(nil))
-                    
-                    let animatedOutNode = !simpleAnimation
-                    
-                    strongSelf.galleryNode.animateOut(animateContent: animatedOutNode, completion: {
-                    })
-                }
-            }
-            
-            self.galleryNode.completeCustomDismiss = { [weak self] in
+        let completion = { [weak self] in
+            if animatedOutNode && animatedOutInterface {
                 self?._hiddenMedia.set(.single(nil))
                 self?.presentingViewController?.dismiss(animated: false, completion: nil)
             }
-            
-            self.galleryNode.controlsVisibilityChanged = { [weak self] visible in
-                self?.prefersOnScreenNavigationHidden = !visible
-                self?.galleryNode.pager.centralItemNode()?.controlsVisibilityUpdated(isVisible: visible)
+        }
+        
+        if let centralItemNode = self.galleryNode.pager.centralItemNode(), let presentationArguments = self.presentationArguments as? GalleryControllerPresentationArguments {
+            let message = self.entries[centralItemNode.index].message
+            if let (media, _) = mediaForMessage(message: message), let transitionArguments = presentationArguments.transitionArguments(message.id, media), !forceAway {
+                animatedOutNode = false
+                centralItemNode.animateOut(to: transitionArguments.transitionNode, addToTransitionSurface: transitionArguments.addToTransitionSurface, completion: {
+                    animatedOutNode = true
+                    completion()
+                })
             }
-            
-            self.galleryNode.updateOrientation = { [weak self] orientation in
+        }
+        
+        self.galleryNode.animateOut(animateContent: animatedOutNode, completion: {
+            animatedOutInterface = true
+            completion()
+        })
+    }
+    
+    override public func loadDisplayNode() {
+        let controllerInteraction = GalleryControllerInteraction(presentController: { [weak self] controller, arguments in
+            if let strongSelf = self {
+                strongSelf.present(controller, in: .window(.root), with: arguments, blockInteraction: true)
+            }
+        }, pushController: { [weak self] c in
+            self?.baseNavigationController?.pushViewController(c)
+            self?.dismiss(forceAway: true)
+        },  dismissController: { [weak self] in
+            self?.dismiss(forceAway: true)
+        }, replaceRootController: { [weak self] controller, ready in
+            if let strongSelf = self {
+                strongSelf.replaceRootController(controller, ready)
+            }
+        }, editMedia: { [weak self] messageId in
+            if let strongSelf = self {
+                var snapshots: [UIView] = []
+                if let navigationBar = strongSelf.navigationBar, let snapshotView = navigationBar.view.snapshotContentTree() {
+                    snapshotView.frame = navigationBar.frame
+                    snapshots.append(snapshotView)
+                }
+                if let snapshotView = strongSelf.galleryNode.footerNode.view.snapshotContentTree() {
+                    snapshotView.frame = strongSelf.galleryNode.footerNode.frame
+                    snapshots.append(snapshotView)
+                }
+                
+                strongSelf.actionInteraction?.editMedia(messageId, snapshots, { [weak self] in
+                    self?.dismiss(forceAway: true)
+                })
+            }
+        })
+        self.displayNode = GalleryControllerNode(controllerInteraction: controllerInteraction)
+        self.displayNodeDidLoad()
+        
+        self.galleryNode.statusBar = self.statusBar
+        self.galleryNode.navigationBar = self.navigationBar
+        
+        self.galleryNode.transitionDataForCentralItem = { [weak self] in
+            if let strongSelf = self {
+                if let centralItemNode = strongSelf.galleryNode.pager.centralItemNode(), let presentationArguments = strongSelf.presentationArguments as? GalleryControllerPresentationArguments {
+                    let message = strongSelf.entries[centralItemNode.index].message
+                    if let (media, _) = mediaForMessage(message: message), let transitionArguments = presentationArguments.transitionArguments(message.id, media) {
+                        return (transitionArguments.transitionNode, transitionArguments.addToTransitionSurface)
+                    }
+                }
+            }
+            return nil
+        }
+        //        self.galleryNode.dismiss = { [weak self] in
+        //            self?._hiddenMedia.set(.single(nil))
+        //            self?.presentingViewController?.dismiss(animated: false, completion: nil)
+        //        }
+        
+        self.galleryNode.beginCustomDismiss = { [weak self] simpleAnimation in
+            if let strongSelf = self {
+                strongSelf._hiddenMedia.set(.single(nil))
+                
+                let animatedOutNode = !simpleAnimation
+                
+                strongSelf.galleryNode.animateOut(animateContent: animatedOutNode, completion: {
+                })
+            }
+        }
+        
+        self.galleryNode.completeCustomDismiss = { [weak self] in
+            self?._hiddenMedia.set(.single(nil))
+            self?.presentingViewController?.dismiss(animated: false, completion: nil)
+        }
+        
+        self.galleryNode.controlsVisibilityChanged = { [weak self] visible in
+            self?.prefersOnScreenNavigationHidden = !visible
+            self?.galleryNode.pager.centralItemNode()?.controlsVisibilityUpdated(isVisible: visible)
+        }
+        
+        self.galleryNode.updateOrientation = { [weak self] orientation in
+            if let strongSelf = self {
+                if strongSelf.initialOrientation == nil {
+                    strongSelf.initialOrientation = orientation == .portrait ? .landscapeRight : .portrait
+                } else if strongSelf.initialOrientation == orientation {
+                    strongSelf.initialOrientation = nil
+                }
+                strongSelf.context.sharedContext.applicationBindings.forceOrientation(orientation)
+            }
+        }
+        
+        let baseNavigationController = self.baseNavigationController
+        self.galleryNode.baseNavigationController = { [weak baseNavigationController] in
+            return baseNavigationController
+        }
+        self.galleryNode.galleryController = { [weak self] in
+            return self
+        }
+        
+        var displayInfoOnTop = false
+        if case .custom = source {
+            displayInfoOnTop = true
+        }
+        
+        var items: [GalleryItem] = []
+        var centralItemIndex: Int?
+        for entry in self.entries {
+            var isCentral = false
+            if entry.message.stableId == self.centralEntryStableId {
+                isCentral = true
+            }
+            if let item = galleryItemForEntry(context: self.context, presentationData: self.presentationData, entry: entry, streamVideos: self.streamVideos, fromPlayingVideo: isCentral && self.fromPlayingVideo, landscape: isCentral && self.landscape, timecode: isCentral ? self.timecode : nil, playbackRate: { [weak self] in return self?.playbackRate }, displayInfoOnTop: displayInfoOnTop, configuration: self.configuration, performAction: self.performAction, openActionOptions: self.openActionOptions, storeMediaPlaybackState: self.actionInteraction?.storeMediaPlaybackState ?? { _, _, _ in }, present: { [weak self] c, a in
                 if let strongSelf = self {
-                    if strongSelf.initialOrientation == nil {
-                        strongSelf.initialOrientation = orientation == .portrait ? .landscapeRight : .portrait
-                    } else if strongSelf.initialOrientation == orientation {
-                        strongSelf.initialOrientation = nil
-                    }
-                    strongSelf.context.sharedContext.applicationBindings.forceOrientation(orientation)
+                    strongSelf.presentInGlobalOverlay(c, with: a)
                 }
-            }
-            
-            let baseNavigationController = self.baseNavigationController
-            self.galleryNode.baseNavigationController = { [weak baseNavigationController] in
-                return baseNavigationController
-            }
-            self.galleryNode.galleryController = { [weak self] in
-                return self
-            }
-            
-            var displayInfoOnTop = false
-            if case .custom = source {
-                displayInfoOnTop = true
-            }
-            
-            var items: [GalleryItem] = []
-            var centralItemIndex: Int?
-            for entry in self.entries {
-                var isCentral = false
-                if entry.message.stableId == self.centralEntryStableId {
-                    isCentral = true
+            }) {
+                if isCentral {
+                    centralItemIndex = items.count
                 }
-                if let item = galleryItemForEntry(context: self.context, presentationData: self.presentationData, entry: entry, streamVideos: self.streamVideos, fromPlayingVideo: isCentral && self.fromPlayingVideo, landscape: isCentral && self.landscape, timecode: isCentral ? self.timecode : nil, playbackRate: { [weak self] in return self?.playbackRate }, displayInfoOnTop: displayInfoOnTop, configuration: self.configuration, performAction: self.performAction, openActionOptions: self.openActionOptions, storeMediaPlaybackState: self.actionInteraction?.storeMediaPlaybackState ?? { _, _, _ in }, present: { [weak self] c, a in
-                    if let strongSelf = self {
-                        strongSelf.presentInGlobalOverlay(c, with: a)
-                    }
-                }) {
-                    if isCentral {
-                        centralItemIndex = items.count
-                    }
-                    items.append(item)
-                }
+                items.append(item)
             }
-            
-            self.galleryNode.pager.replaceItems(items, centralItemIndex: centralItemIndex)
-            
-            self.galleryNode.pager.centralItemIndexUpdated = { [weak self] index in
-                if let strongSelf = self {
-                    var hiddenItem: (MessageId, Media)?
-                    if let index = index {
-                        let message = strongSelf.entries[index].message
-                        strongSelf.centralEntryStableId = message.stableId
-                        if let (media, _) = mediaForMessage(message: message) {
-                            hiddenItem = (message.id, media)
+        }
+        
+        self.galleryNode.pager.replaceItems(items, centralItemIndex: centralItemIndex)
+        
+        self.galleryNode.pager.centralItemIndexUpdated = { [weak self] index in
+            if let strongSelf = self {
+                var hiddenItem: (MessageId, Media)?
+                if let index = index {
+                    let message = strongSelf.entries[index].message
+                    strongSelf.centralEntryStableId = message.stableId
+                    if let (media, _) = mediaForMessage(message: message) {
+                        hiddenItem = (message.id, media)
+                    }
+                    
+                    if let node = strongSelf.galleryNode.pager.centralItemNode() {
+                        strongSelf.centralItemTitle.set(node.title())
+                        strongSelf.centralItemTitleView.set(node.titleView())
+                        strongSelf.centralItemRightBarButtonItem.set(node.rightBarButtonItem())
+                        strongSelf.centralItemRightBarButtonItems.set(node.rightBarButtonItems())
+                        strongSelf.centralItemNavigationStyle.set(node.navigationStyle())
+                        strongSelf.centralItemFooterContentNode.set(node.footerContent())
+                        strongSelf.galleryNode.pager.pagingEnabledPromise.set(node.isPagingEnabled())
+                    }
+                    
+                    switch strongSelf.source {
+                    case let .peerMessagesAtId(_, chatLocation, chatLocationContextHolder):
+                        var reloadAroundIndex: MessageIndex?
+                        if index <= 2 && strongSelf.hasLeftEntries {
+                            reloadAroundIndex = strongSelf.entries.first?.index
+                        } else if index >= strongSelf.entries.count - 3 && strongSelf.hasRightEntries {
+                            reloadAroundIndex = strongSelf.entries.last?.index
                         }
-                        
-                        if let node = strongSelf.galleryNode.pager.centralItemNode() {
-                            strongSelf.centralItemTitle.set(node.title())
-                            strongSelf.centralItemTitleView.set(node.titleView())
-                            strongSelf.centralItemRightBarButtonItem.set(node.rightBarButtonItem())
-                            strongSelf.centralItemRightBarButtonItems.set(node.rightBarButtonItems())
-                            strongSelf.centralItemNavigationStyle.set(node.navigationStyle())
-                            strongSelf.centralItemFooterContentNode.set(node.footerContent())
-                            strongSelf.galleryNode.pager.pagingEnabledPromise.set(node.isPagingEnabled())
-                        }
-                        
-                        switch strongSelf.source {
-                        case let .peerMessagesAtId(_, chatLocation, chatLocationContextHolder):
-                            var reloadAroundIndex: MessageIndex?
-                            if index <= 2 && strongSelf.hasLeftEntries {
-                                reloadAroundIndex = strongSelf.entries.first?.index
-                            } else if index >= strongSelf.entries.count - 3 && strongSelf.hasRightEntries {
-                                reloadAroundIndex = strongSelf.entries.last?.index
+                        if let reloadAroundIndex = reloadAroundIndex, let tagMask = strongSelf.tagMask {
+                            let namespaces: MessageIdNamespaces
+                            if Namespaces.Message.allScheduled.contains(message.id.namespace) {
+                                namespaces = .just(Namespaces.Message.allScheduled)
+                            } else {
+                                namespaces = .not(Namespaces.Message.allScheduled)
                             }
-                            if let reloadAroundIndex = reloadAroundIndex, let tagMask = strongSelf.tagMask {
-                                let namespaces: MessageIdNamespaces
-                                if Namespaces.Message.allScheduled.contains(message.id.namespace) {
-                                    namespaces = .just(Namespaces.Message.allScheduled)
-                                } else {
-                                    namespaces = .not(Namespaces.Message.allScheduled)
+                            let signal = strongSelf.context.account.postbox.aroundMessageHistoryViewForLocation(strongSelf.context.chatLocationInput(for: chatLocation, contextHolder: chatLocationContextHolder), anchor: .index(reloadAroundIndex), ignoreMessagesInTimestampRange: nil, count: 50, clipHoles: false, fixedCombinedReadStates: nil, topTaggedMessageIdNamespaces: [], tagMask: tagMask, appendMessagesFromTheSameGroup: false, namespaces: namespaces, orderStatistics: [.combinedLocation])
+                            |> mapToSignal { (view, _, _) -> Signal<GalleryMessageHistoryView?, NoError> in
+                                let mapped = GalleryMessageHistoryView.view(view)
+                                return .single(mapped)
+                            }
+                            |> take(1)
+                            
+                            strongSelf.updateVisibleDisposable.set((signal
+                                                                    |> deliverOnMainQueue).start(next: { view in
+                                guard let strongSelf = self, let view = view else {
+                                    return
                                 }
-                                let signal = strongSelf.context.account.postbox.aroundMessageHistoryViewForLocation(strongSelf.context.chatLocationInput(for: chatLocation, contextHolder: chatLocationContextHolder), anchor: .index(reloadAroundIndex), ignoreMessagesInTimestampRange: nil, count: 50, clipHoles: false, fixedCombinedReadStates: nil, topTaggedMessageIdNamespaces: [], tagMask: tagMask, appendMessagesFromTheSameGroup: false, namespaces: namespaces, orderStatistics: [.combinedLocation])
-                                |> mapToSignal { (view, _, _) -> Signal<GalleryMessageHistoryView?, NoError> in
-                                    let mapped = GalleryMessageHistoryView.view(view)
-                                    return .single(mapped)
-                                }
-                                |> take(1)
                                 
-                                strongSelf.updateVisibleDisposable.set((signal
-                                                                        |> deliverOnMainQueue).start(next: { view in
-                                    guard let strongSelf = self, let view = view else {
-                                        return
+                                let entries = view.entries
+                                
+                                if strongSelf.invertItemOrder {
+                                    strongSelf.entries = entries.reversed()
+                                    strongSelf.hasLeftEntries = view.hasLater
+                                    strongSelf.hasRightEntries = view.hasEarlier
+                                } else {
+                                    strongSelf.entries = entries
+                                    strongSelf.hasLeftEntries = view.hasEarlier
+                                    strongSelf.hasRightEntries = view.hasLater
+                                }
+                                if strongSelf.isViewLoaded {
+                                    var items: [GalleryItem] = []
+                                    var centralItemIndex: Int?
+                                    for entry in strongSelf.entries {
+                                        var isCentral = false
+                                        if entry.message.stableId == strongSelf.centralEntryStableId {
+                                            isCentral = true
+                                        }
+                                        if let item = galleryItemForEntry(context: strongSelf.context, presentationData: strongSelf.presentationData, entry: entry, isCentral: isCentral, streamVideos: false, fromPlayingVideo: isCentral && strongSelf.fromPlayingVideo, landscape: isCentral && strongSelf.landscape, timecode: isCentral ? strongSelf.timecode : nil, playbackRate: { return self?.playbackRate }, displayInfoOnTop: displayInfoOnTop, configuration: strongSelf.configuration, performAction: strongSelf.performAction, openActionOptions: strongSelf.openActionOptions, storeMediaPlaybackState: strongSelf.actionInteraction?.storeMediaPlaybackState ?? { _, _, _ in }, present: { [weak self] c, a in
+                                            if let strongSelf = self {
+                                                strongSelf.presentInGlobalOverlay(c, with: a)
+                                            }
+                                        }) {
+                                            if isCentral {
+                                                centralItemIndex = items.count
+                                            }
+                                            items.append(item)
+                                        }
                                     }
                                     
-                                    let entries = view.entries
-                                    
+                                    strongSelf.galleryNode.pager.replaceItems(items, centralItemIndex: centralItemIndex)
+                                }
+                            }))
+                        }
+                    case let .custom(messages, _, loadMore):
+                        if index >= strongSelf.entries.count - 3 && strongSelf.hasRightEntries && !strongSelf.loadingMore {
+                            strongSelf.loadingMore = true
+                            loadMore?()
+                            
+                            strongSelf.updateVisibleDisposable.set((messages
+                                                                    |> deliverOnMainQueue).start(next: { messages, totalCount, hasMore in
+                                guard let strongSelf = self else {
+                                    return
+                                }
+                                
+                                var entries: [MessageHistoryEntry] = []
+                                var index = messages.count
+                                for message in messages.reversed() {
+                                    entries.append(MessageHistoryEntry(message: message, isRead: false, location: nil, monthLocation: nil, attributes: MutableMessageHistoryEntryAttributes(authorIsContact: false)))
+                                    index -= 1
+                                }
+                                
+                                if entries.count > strongSelf.entries.count {
                                     if strongSelf.invertItemOrder {
                                         strongSelf.entries = entries.reversed()
-                                        strongSelf.hasLeftEntries = view.hasLater
-                                        strongSelf.hasRightEntries = view.hasEarlier
+                                        strongSelf.hasLeftEntries = false
+                                        strongSelf.hasRightEntries = hasMore
                                     } else {
                                         strongSelf.entries = entries
-                                        strongSelf.hasLeftEntries = view.hasEarlier
-                                        strongSelf.hasRightEntries = view.hasLater
+                                        strongSelf.hasLeftEntries = hasMore
+                                        strongSelf.hasRightEntries = false
                                     }
                                     if strongSelf.isViewLoaded {
                                         var items: [GalleryItem] = []
@@ -1268,254 +1366,202 @@ public class GalleryController: ViewController, StandalonePresentableController,
                                         
                                         strongSelf.galleryNode.pager.replaceItems(items, centralItemIndex: centralItemIndex)
                                     }
-                                }))
-                            }
-                        case let .custom(messages, _, loadMore):
-                            if index >= strongSelf.entries.count - 3 && strongSelf.hasRightEntries && !strongSelf.loadingMore {
-                                strongSelf.loadingMore = true
-                                loadMore?()
-                                
-                                strongSelf.updateVisibleDisposable.set((messages
-                                                                        |> deliverOnMainQueue).start(next: { messages, totalCount, hasMore in
-                                    guard let strongSelf = self else {
-                                        return
-                                    }
                                     
-                                    var entries: [MessageHistoryEntry] = []
-                                    var index = messages.count
-                                    for message in messages.reversed() {
-                                        entries.append(MessageHistoryEntry(message: message, isRead: false, location: nil, monthLocation: nil, attributes: MutableMessageHistoryEntryAttributes(authorIsContact: false)))
-                                        index -= 1
-                                    }
-                                    
-                                    if entries.count > strongSelf.entries.count {
-                                        if strongSelf.invertItemOrder {
-                                            strongSelf.entries = entries.reversed()
-                                            strongSelf.hasLeftEntries = false
-                                            strongSelf.hasRightEntries = hasMore
-                                        } else {
-                                            strongSelf.entries = entries
-                                            strongSelf.hasLeftEntries = hasMore
-                                            strongSelf.hasRightEntries = false
-                                        }
-                                        if strongSelf.isViewLoaded {
-                                            var items: [GalleryItem] = []
-                                            var centralItemIndex: Int?
-                                            for entry in strongSelf.entries {
-                                                var isCentral = false
-                                                if entry.message.stableId == strongSelf.centralEntryStableId {
-                                                    isCentral = true
-                                                }
-                                                if let item = galleryItemForEntry(context: strongSelf.context, presentationData: strongSelf.presentationData, entry: entry, isCentral: isCentral, streamVideos: false, fromPlayingVideo: isCentral && strongSelf.fromPlayingVideo, landscape: isCentral && strongSelf.landscape, timecode: isCentral ? strongSelf.timecode : nil, playbackRate: { return self?.playbackRate }, displayInfoOnTop: displayInfoOnTop, configuration: strongSelf.configuration, performAction: strongSelf.performAction, openActionOptions: strongSelf.openActionOptions, storeMediaPlaybackState: strongSelf.actionInteraction?.storeMediaPlaybackState ?? { _, _, _ in }, present: { [weak self] c, a in
-                                                    if let strongSelf = self {
-                                                        strongSelf.presentInGlobalOverlay(c, with: a)
-                                                    }
-                                                }) {
-                                                    if isCentral {
-                                                        centralItemIndex = items.count
-                                                    }
-                                                    items.append(item)
-                                                }
-                                            }
-                                            
-                                            strongSelf.galleryNode.pager.replaceItems(items, centralItemIndex: centralItemIndex)
-                                        }
-                                        
-                                        strongSelf.updateVisibleDisposable.set(nil)
-                                        strongSelf.loadingMore = false
-                                    }
-                                }))
-                            }
-                        default:
-                            break
+                                    strongSelf.updateVisibleDisposable.set(nil)
+                                    strongSelf.loadingMore = false
+                                }
+                            }))
                         }
-                    }
-                    if strongSelf.didSetReady {
-                        strongSelf._hiddenMedia.set(.single(hiddenItem))
-                        if let hiddenItem = hiddenItem {
-                            strongSelf.centralItemUpdated?(hiddenItem.0)
-                        }
+                    default:
+                        break
                     }
                 }
-            }
-            
-            if !self.entries.isEmpty && !self.didSetReady {
-                if self.temporaryDoNotWaitForReady {
-                    self.didSetReady = true
-                    self._ready.set(.single(true))
-                } else {
-                    let ready = self.galleryNode.pager.ready() |> timeout(2.0, queue: Queue.mainQueue(), alternate: .single(Void())) |> afterNext { [weak self] _ in
-                        self?.didSetReady = true
+                if strongSelf.didSetReady {
+                    strongSelf._hiddenMedia.set(.single(hiddenItem))
+                    if let hiddenItem = hiddenItem {
+                        strongSelf.centralItemUpdated?(hiddenItem.0)
                     }
-                    self._ready.set(ready |> map { true })
                 }
             }
         }
         
-        override public func viewWillAppear(_ animated: Bool) {
-            super.viewWillAppear(animated)
-        }
-        
-        override public func viewDidAppear(_ animated: Bool) {
-            super.viewDidAppear(animated)
-            
-            var nodeAnimatesItself = false
-            
-            if let centralItemNode = self.galleryNode.pager.centralItemNode() {
-                let message = self.entries[centralItemNode.index].message
-                self.centralItemTitle.set(centralItemNode.title())
-                self.centralItemTitleView.set(centralItemNode.titleView())
-                self.centralItemRightBarButtonItem.set(centralItemNode.rightBarButtonItem())
-                self.centralItemRightBarButtonItems.set(centralItemNode.rightBarButtonItems())
-                self.centralItemNavigationStyle.set(centralItemNode.navigationStyle())
-                self.centralItemFooterContentNode.set(centralItemNode.footerContent())
-                self.galleryNode.pager.pagingEnabledPromise.set(centralItemNode.isPagingEnabled())
-                
-                if let (media, _) = mediaForMessage(message: message) {
-                    if let presentationArguments = self.presentationArguments as? GalleryControllerPresentationArguments, let transitionArguments = presentationArguments.transitionArguments(message.id, media) {
-                        nodeAnimatesItself = true
-                        if presentationArguments.animated {
-                            centralItemNode.animateIn(from: transitionArguments.transitionNode, addToTransitionSurface: transitionArguments.addToTransitionSurface, completion: {})
-                        }
-                        
-                        self._hiddenMedia.set(.single((message.id, media)))
-                    }
-                    centralItemNode.activateAsInitial()
-                }
-                
-                self.onDidAppear?()
-            }
-            
-            if !self.isPresentedInPreviewingContext() {
-                self.galleryNode.setControlsHidden(self.landscape, animated: false)
-                if let presentationArguments = self.presentationArguments as? GalleryControllerPresentationArguments {
-                    if presentationArguments.animated {
-                        self.galleryNode.animateIn(animateContent: !nodeAnimatesItself && !self.useSimpleAnimation, useSimpleAnimation: self.useSimpleAnimation)
-                    }
-                }
-            }
-            
-            self.accountInUseDisposable.set(self.context.sharedContext.setAccountUserInterfaceInUse(self.context.account.id))
-        }
-        
-        override public func didAppearInContextPreview() {
-            if let centralItemNode = self.galleryNode.pager.centralItemNode() {
-                let message = self.entries[centralItemNode.index].message
-                self.centralItemTitle.set(centralItemNode.title())
-                self.centralItemTitleView.set(centralItemNode.titleView())
-                self.centralItemRightBarButtonItem.set(centralItemNode.rightBarButtonItem())
-                self.centralItemRightBarButtonItems.set(centralItemNode.rightBarButtonItems())
-                self.centralItemNavigationStyle.set(centralItemNode.navigationStyle())
-                self.centralItemFooterContentNode.set(centralItemNode.footerContent())
-                self.galleryNode.pager.pagingEnabledPromise.set(centralItemNode.isPagingEnabled())
-                
-                if let _ = mediaForMessage(message: message) {
-                    centralItemNode.activateAsInitial()
-                }
-            }
-        }
-        
-        override public func viewDidDisappear(_ animated: Bool) {
-            super.viewDidDisappear(animated)
-            
-            self.accountInUseDisposable.set(nil)
-        }
-        
-        override public func preferredContentSizeForLayout(_ layout: ContainerViewLayout) -> CGSize? {
-            if let centralItemNode = self.galleryNode.pager.centralItemNode(), let itemSize = centralItemNode.contentSize() {
-                return itemSize.aspectFitted(layout.size)
+        if !self.entries.isEmpty && !self.didSetReady {
+            if self.temporaryDoNotWaitForReady {
+                self.didSetReady = true
+                self._ready.set(.single(true))
             } else {
-                return nil
-            }
-        }
-        
-        override public func containerLayoutUpdated(_ layout: ContainerViewLayout, transition: ContainedViewLayoutTransition) {
-            super.containerLayoutUpdated(layout, transition: transition)
-            
-            self.galleryNode.frame = CGRect(origin: CGPoint(), size: layout.size)
-            self.galleryNode.containerLayoutUpdated(layout, navigationBarHeight: self.navigationLayout(layout: layout).navigationFrame.maxY, transition: transition)
-            
-            if !self.adjustedForInitialPreviewingLayout && self.isPresentedInPreviewingContext() {
-                self.adjustedForInitialPreviewingLayout = true
-                self.galleryNode.setControlsHidden(true, animated: false)
-                if let centralItemNode = self.galleryNode.pager.centralItemNode(), let itemSize = centralItemNode.contentSize() {
-                    centralItemNode.adjustForPreviewing()
-                    self.preferredContentSize = itemSize.aspectFitted(layout.size)
-                    self.containerLayoutUpdated(ContainerViewLayout(size: self.preferredContentSize, metrics: LayoutMetrics(), deviceMetrics: layout.deviceMetrics, intrinsicInsets: UIEdgeInsets(), safeInsets: UIEdgeInsets(), additionalInsets: UIEdgeInsets(), statusBarHeight: nil, inputHeight: nil, inputHeightIsInteractivellyChanging: false, inVoiceOver: false), transition: .immediate)
+                let ready = self.galleryNode.pager.ready() |> timeout(2.0, queue: Queue.mainQueue(), alternate: .single(Void())) |> afterNext { [weak self] _ in
+                    self?.didSetReady = true
                 }
+                self._ready.set(ready |> map { true })
             }
-        }
-        
-        func updateSharedPlaybackRate(_ playbackRate: Double?) {
-            self.playbackRate = playbackRate
-            
-            self.galleryNode.pager.forEachItemNode { itemNode in
-                if let itemNode = itemNode as? UniversalVideoGalleryItemNode {
-                    itemNode.updatePlaybackRate(playbackRate)
-                }
-            }
-        }
-        
-        public var keyShortcuts: [KeyShortcut] {
-            var keyShortcuts: [KeyShortcut] = []
-            keyShortcuts.append(
-                KeyShortcut(
-                    title: "",
-                    input: UIKeyCommand.inputUpArrow,
-                    modifiers: [.command],
-                    action: { [weak self] in
-                        self?.dismiss(forceAway: false)
-                    }
-                )
-            )
-            keyShortcuts.append(
-                KeyShortcut(
-                    title: "",
-                    input: "W",
-                    modifiers: [.command],
-                    action: { [weak self] in
-                        self?.dismiss(forceAway: false)
-                    }
-                )
-            )
-            keyShortcuts.append(
-                KeyShortcut(
-                    title: self.galleryNode.areControlsHidden ? self.presentationData.strings.KeyCommand_ExitFullscreen : self.presentationData.strings.KeyCommand_EnterFullscreen,
-                    input: "F",
-                    modifiers: [.control, .command],
-                    action: { [weak self] in
-                        if let strongSelf = self {
-                            strongSelf.galleryNode.setControlsHidden(!strongSelf.galleryNode.areControlsHidden, animated: true)
-                        }
-                    }
-                )
-            )
-            if self.galleryNode.pager.items.count > 1 {
-                if self.galleryNode.pager.canGoToPreviousItem() {
-                    keyShortcuts.append(
-                        KeyShortcut(
-                            input: UIKeyCommand.inputLeftArrow,
-                            modifiers: [],
-                            action: { [weak self] in
-                                self?.galleryNode.pager.goToPreviousItem()
-                            }
-                        )
-                    )
-                }
-                if self.galleryNode.pager.canGoToNextItem() {
-                    keyShortcuts.append(
-                        KeyShortcut(
-                            input: UIKeyCommand.inputRightArrow,
-                            modifiers: [],
-                            action: { [weak self] in
-                                self?.galleryNode.pager.goToNextItem()
-                            }
-                        )
-                    )
-                }
-            }
-            let itemNodeShortcuts = self.galleryNode.pager.centralItemNode()?.keyShortcuts ?? []
-            keyShortcuts.append(contentsOf: itemNodeShortcuts)
-            return keyShortcuts
         }
     }
+    
+    override public func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+    }
+    
+    override public func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        
+        var nodeAnimatesItself = false
+        
+        if let centralItemNode = self.galleryNode.pager.centralItemNode() {
+            let message = self.entries[centralItemNode.index].message
+            self.centralItemTitle.set(centralItemNode.title())
+            self.centralItemTitleView.set(centralItemNode.titleView())
+            self.centralItemRightBarButtonItem.set(centralItemNode.rightBarButtonItem())
+            self.centralItemRightBarButtonItems.set(centralItemNode.rightBarButtonItems())
+            self.centralItemNavigationStyle.set(centralItemNode.navigationStyle())
+            self.centralItemFooterContentNode.set(centralItemNode.footerContent())
+            self.galleryNode.pager.pagingEnabledPromise.set(centralItemNode.isPagingEnabled())
+            
+            if let (media, _) = mediaForMessage(message: message) {
+                if let presentationArguments = self.presentationArguments as? GalleryControllerPresentationArguments, let transitionArguments = presentationArguments.transitionArguments(message.id, media) {
+                    nodeAnimatesItself = true
+                    if presentationArguments.animated {
+                        centralItemNode.animateIn(from: transitionArguments.transitionNode, addToTransitionSurface: transitionArguments.addToTransitionSurface, completion: {})
+                    }
+                    
+                    self._hiddenMedia.set(.single((message.id, media)))
+                }
+                centralItemNode.activateAsInitial()
+            }
+            
+            self.onDidAppear?()
+        }
+        
+        if !self.isPresentedInPreviewingContext() {
+            self.galleryNode.setControlsHidden(self.landscape, animated: false)
+            if let presentationArguments = self.presentationArguments as? GalleryControllerPresentationArguments {
+                if presentationArguments.animated {
+                    self.galleryNode.animateIn(animateContent: !nodeAnimatesItself && !self.useSimpleAnimation, useSimpleAnimation: self.useSimpleAnimation)
+                }
+            }
+        }
+        
+        self.accountInUseDisposable.set(self.context.sharedContext.setAccountUserInterfaceInUse(self.context.account.id))
+    }
+    
+    override public func didAppearInContextPreview() {
+        if let centralItemNode = self.galleryNode.pager.centralItemNode() {
+            let message = self.entries[centralItemNode.index].message
+            self.centralItemTitle.set(centralItemNode.title())
+            self.centralItemTitleView.set(centralItemNode.titleView())
+            self.centralItemRightBarButtonItem.set(centralItemNode.rightBarButtonItem())
+            self.centralItemRightBarButtonItems.set(centralItemNode.rightBarButtonItems())
+            self.centralItemNavigationStyle.set(centralItemNode.navigationStyle())
+            self.centralItemFooterContentNode.set(centralItemNode.footerContent())
+            self.galleryNode.pager.pagingEnabledPromise.set(centralItemNode.isPagingEnabled())
+            
+            if let _ = mediaForMessage(message: message) {
+                centralItemNode.activateAsInitial()
+            }
+        }
+    }
+    
+    override public func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        
+        self.accountInUseDisposable.set(nil)
+    }
+    
+    override public func preferredContentSizeForLayout(_ layout: ContainerViewLayout) -> CGSize? {
+        if let centralItemNode = self.galleryNode.pager.centralItemNode(), let itemSize = centralItemNode.contentSize() {
+            return itemSize.aspectFitted(layout.size)
+        } else {
+            return nil
+        }
+    }
+    
+    override public func containerLayoutUpdated(_ layout: ContainerViewLayout, transition: ContainedViewLayoutTransition) {
+        super.containerLayoutUpdated(layout, transition: transition)
+        
+        self.galleryNode.frame = CGRect(origin: CGPoint(), size: layout.size)
+        self.galleryNode.containerLayoutUpdated(layout, navigationBarHeight: self.navigationLayout(layout: layout).navigationFrame.maxY, transition: transition)
+        
+        if !self.adjustedForInitialPreviewingLayout && self.isPresentedInPreviewingContext() {
+            self.adjustedForInitialPreviewingLayout = true
+            self.galleryNode.setControlsHidden(true, animated: false)
+            if let centralItemNode = self.galleryNode.pager.centralItemNode(), let itemSize = centralItemNode.contentSize() {
+                centralItemNode.adjustForPreviewing()
+                self.preferredContentSize = itemSize.aspectFitted(layout.size)
+                self.containerLayoutUpdated(ContainerViewLayout(size: self.preferredContentSize, metrics: LayoutMetrics(), deviceMetrics: layout.deviceMetrics, intrinsicInsets: UIEdgeInsets(), safeInsets: UIEdgeInsets(), additionalInsets: UIEdgeInsets(), statusBarHeight: nil, inputHeight: nil, inputHeightIsInteractivellyChanging: false, inVoiceOver: false), transition: .immediate)
+            }
+        }
+    }
+    
+    func updateSharedPlaybackRate(_ playbackRate: Double?) {
+        self.playbackRate = playbackRate
+        
+        self.galleryNode.pager.forEachItemNode { itemNode in
+            if let itemNode = itemNode as? UniversalVideoGalleryItemNode {
+                itemNode.updatePlaybackRate(playbackRate)
+            }
+        }
+    }
+    
+    public var keyShortcuts: [KeyShortcut] {
+        var keyShortcuts: [KeyShortcut] = []
+        keyShortcuts.append(
+            KeyShortcut(
+                title: "",
+                input: UIKeyCommand.inputUpArrow,
+                modifiers: [.command],
+                action: { [weak self] in
+                    self?.dismiss(forceAway: false)
+                }
+            )
+        )
+        keyShortcuts.append(
+            KeyShortcut(
+                title: "",
+                input: "W",
+                modifiers: [.command],
+                action: { [weak self] in
+                    self?.dismiss(forceAway: false)
+                }
+            )
+        )
+        keyShortcuts.append(
+            KeyShortcut(
+                title: self.galleryNode.areControlsHidden ? self.presentationData.strings.KeyCommand_ExitFullscreen : self.presentationData.strings.KeyCommand_EnterFullscreen,
+                input: "F",
+                modifiers: [.control, .command],
+                action: { [weak self] in
+                    if let strongSelf = self {
+                        strongSelf.galleryNode.setControlsHidden(!strongSelf.galleryNode.areControlsHidden, animated: true)
+                    }
+                }
+            )
+        )
+        if self.galleryNode.pager.items.count > 1 {
+            if self.galleryNode.pager.canGoToPreviousItem() {
+                keyShortcuts.append(
+                    KeyShortcut(
+                        input: UIKeyCommand.inputLeftArrow,
+                        modifiers: [],
+                        action: { [weak self] in
+                            self?.galleryNode.pager.goToPreviousItem()
+                        }
+                    )
+                )
+            }
+            if self.galleryNode.pager.canGoToNextItem() {
+                keyShortcuts.append(
+                    KeyShortcut(
+                        input: UIKeyCommand.inputRightArrow,
+                        modifiers: [],
+                        action: { [weak self] in
+                            self?.galleryNode.pager.goToNextItem()
+                        }
+                    )
+                )
+            }
+        }
+        let itemNodeShortcuts = self.galleryNode.pager.centralItemNode()?.keyShortcuts ?? []
+        keyShortcuts.append(contentsOf: itemNodeShortcuts)
+        return keyShortcuts
+    }
+}

@@ -25,6 +25,8 @@ public final class TelegramRootController: NavigationController {
     public var rootTabController: TabBarController?
     
     public var dummyController: DummyScreen? // TODO - make this WEVGalleryPageNode
+    public var galleryController: GalleryController?
+    
     public var contactsController: ContactsController?
     public var callListController: CallListController?
     public var chatListController: ChatListController?
@@ -113,10 +115,11 @@ public final class TelegramRootController: NavigationController {
         }
         controllers.append(contactsController)
         
-        
-        let dummyController = DummyScreen(context: self.context)
-        controllers.append(dummyController)
-
+//
+//        let dummyController = DummyScreen(context: self.context)
+//        controllers.append(dummyController)
+        let galleryController  = GalleryController(context:self.context,baseNavigationController:nil)
+        controllers.append(galleryController)
         
         if showCallsTab {
             controllers.append(callListController)
@@ -144,7 +147,8 @@ public final class TelegramRootController: NavigationController {
                 
         tabBarController.setControllers(controllers, selectedIndex: restoreSettignsController != nil ? (controllers.count - 1) : (controllers.count - 2))
         
-        self.dummyController = dummyController
+//        self.dummyController = dummyController
+        self.galleryController = galleryController
         self.contactsController = contactsController
         self.callListController = callListController
         self.chatListController = chatListController
@@ -163,7 +167,8 @@ public final class TelegramRootController: NavigationController {
             return
         }
         var controllers: [ViewController] = []
-        controllers.append(self.dummyController!)
+//        controllers.append(self.dummyController!)
+        controllers.append(galleryController!)
         controllers.append(self.contactsController!)
       
         if showCallsTab {
