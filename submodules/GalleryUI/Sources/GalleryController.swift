@@ -430,15 +430,12 @@ public class GalleryController: ViewController, StandalonePresentableController,
         self.navigationItem.leftBarButtonItem = backItem
         
         // JP - added these to attempt to get vc to present from tab bar
-        self.tabBarItem.title = self.presentationData.strings.Contacts_Title
+        self.tabBarItem.title = "Dummy"// self.presentationData.strings.Contacts_Title
         
-        let icon = UIImage(bundleImageName: "Chat List/Tabs/IconContacts")
-        
+        let icon = UIImage(systemName: "popcorn.fill")
         self.tabBarItem.image = icon
         self.tabBarItem.selectedImage = icon
-        if !self.presentationData.reduceMotion {
-            self.tabBarItem.animationName = "TabContacts"
-        }
+    
         
         
         self.statusBar.statusBarStyle = .White
@@ -1076,9 +1073,9 @@ public class GalleryController: ViewController, StandalonePresentableController,
         self.navigationItem.leftBarButtonItem = backItem
         
         // JP - added these to attempt to get vc to present from tab bar
-        self.tabBarItem.title = self.presentationData.strings.Contacts_Title
+        self.tabBarItem.title = "Dummy"//  self.presentationData.strings.Contacts_Title
         
-        let icon = UIImage(bundleImageName: "Chat List/Tabs/IconContacts")
+        let icon = UIImage(systemName: "popcorn.fill")
         
         self.tabBarItem.image = icon
         self.tabBarItem.selectedImage = icon
@@ -1714,6 +1711,7 @@ public class GalleryController: ViewController, StandalonePresentableController,
     }
     
     override public func loadDisplayNode() {
+        print("loadDisplayNode")
         let controllerInteraction = GalleryControllerInteraction(presentController: { [weak self] controller, arguments in
             if let strongSelf = self {
                 strongSelf.present(controller, in: .window(.root), with: arguments, blockInteraction: true)

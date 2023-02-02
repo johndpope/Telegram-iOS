@@ -120,10 +120,10 @@ public final class TelegramRootController: NavigationController {
 //        controllers.append(dummyController)
         let galleryController  = GalleryController(context:self.context,baseNavigationController:nil)
         controllers.append(galleryController)
-        galleryController.switchToGalleryController = {  [weak self] in
-            self?.openGalleryController()
-        }
-        
+//        galleryController.switchToGalleryController = {  [weak self] in
+//            self?.openGalleryController()
+//        }
+//
         if showCallsTab {
             controllers.append(callListController)
         }
@@ -160,7 +160,7 @@ public final class TelegramRootController: NavigationController {
         self.rootTabController = tabBarController
         self.pushViewController(tabBarController, animated: false)
 
-     
+        openGalleryController()
         
 
     }
@@ -205,15 +205,7 @@ public final class TelegramRootController: NavigationController {
     public func openGalleryController(){
         
         
-        guard let rootTabController = self.rootTabController else {
-            return
-        }
-        
-  
-        
-        if let index = rootTabController.controllers.firstIndex(where: { $0 is GalleryController}) {
-            rootTabController.selectedIndex = index
-        }
+   
         
         let lauraAboliPeerId = PeerId.Id._internalFromInt64Value(1375690723) //1479202492 // 1375690723 847052656
         let peerId = PeerId(namespace: Namespaces.Peer.CloudChannel, id:lauraAboliPeerId)
@@ -245,6 +237,16 @@ public final class TelegramRootController: NavigationController {
         let message = Message(stableId: 0, stableVersion: 0, id: MessageId(peerId: chatLocation.peerId, namespace: 0, id: maxReadId), globallyUniqueId: nil, groupingKey: nil, groupInfo: nil, threadId: nil, timestamp: 0, flags: [], tags: [], globalTags: [], localTags: [], forwardInfo: nil, author: nil, text: "", attributes: [], media: [], peers: SimpleDictionary(), associatedMessages: SimpleDictionary(), associatedMessageIds: [], associatedMedia: [:], associatedThreadInfo: nil)
         let source = GalleryControllerItemSource.peerMovieMessagesAtId(messageId: message.id, chatLocation: .peer(id: message.id.peerId), chatLocationContextHolder: Atomic<ChatLocationContextHolder?>(value: nil))
         self.galleryController?.configure(source:source)
+        
+        guard let rootTabController = self.rootTabController else {
+            return
+        }
+        
+  
+        
+        if let index = rootTabController.controllers.firstIndex(where: { $0 is GalleryController}) {
+            rootTabController.selectedIndex = index
+        }
 
   
     }
