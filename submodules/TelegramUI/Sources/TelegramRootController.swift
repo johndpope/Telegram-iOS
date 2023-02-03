@@ -183,6 +183,7 @@ public final class TelegramRootController: NavigationController {
         controllers.append(self.contactsController!)
       
         if self.hotswap {
+            self.dummyController!.displayNode.removeFromSupernode()
             controllers.append(self.hotSwapVC!)
         }else{
             controllers.append(self.dummyController!)

@@ -427,21 +427,19 @@ public class GalleryController: ViewController, StandalonePresentableController,
         
         super.init(navigationBarPresentationData: NavigationBarPresentationData(theme: GalleryController.darkNavigationTheme, strings: NavigationBarStrings(presentationStrings: self.presentationData.strings)))
         
-        let backItem = UIBarButtonItem(backButtonAppearanceWithTitle: presentationData.strings.Common_Back, target: self, action: #selector(self.donePressed))
-        self.navigationItem.leftBarButtonItem = backItem
+//        let backItem = UIBarButtonItem(backButtonAppearanceWithTitle: presentationData.strings.Common_Back, target: self, action: #selector(self.donePressed))
+//        self.navigationItem.leftBarButtonItem = backItem
         
         // JP - added these to attempt to get vc to present from tab bar
-        self.tabBarItem.title = self.presentationData.strings.Contacts_Title
+        self.tabBarItem.title = "Feed"//self.presentationData.strings.Contacts_Title
         
-        let icon = UIImage(bundleImageName: "Chat List/Tabs/IconContacts")
+        let icon = UIImage(systemName: "popcorn.fill")
         
         self.tabBarItem.image = icon
         self.tabBarItem.selectedImage = icon
-        if !self.presentationData.reduceMotion {
-            self.tabBarItem.animationName = "TabContacts"
-        }
+    
         
-        
+        self.overrideUserInterfaceStyle = .dark
         self.statusBar.statusBarStyle = .White
         
         let message: Signal<Message?, NoError>

@@ -339,6 +339,13 @@ public protocol CustomViewControllerNavigationDataSummary: AnyObject {
         }
     }
     
+    
+    public init(_ noHeader:Bool){
+        self.navigationBar = nil
+        self.statusBar = StatusBar()
+        self.presentationContext = PresentationContext()
+        super.init(nibName: nil, bundle: nil)
+    }
     public init(navigationBarPresentationData: NavigationBarPresentationData?) {
         self.statusBar = StatusBar()
         if let navigationBarPresentationData = navigationBarPresentationData {
