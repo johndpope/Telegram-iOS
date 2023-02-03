@@ -1396,6 +1396,11 @@ public class GalleryController: ViewController, StandalonePresentableController,
             }
             
             self.accountInUseDisposable.set(self.context.sharedContext.setAccountUserInterfaceInUse(self.context.account.id))
+            
+            
+            let swap = Notification(name: Notification.Name("toggleTabBarColor"), object: nil,userInfo:nil)
+            NotificationCenter.default.post(swap)
+            
         }
         
         override public func didAppearInContextPreview() {

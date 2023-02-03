@@ -95,8 +95,24 @@ public final class TelegramRootController: NavigationController {
                 }
         })
         
+        let _ = NotificationCenter.default.addObserver(forName: Notification.Name("toggleTabBarColor"), object: nil, queue: .main, using: { notification in
+            self.toggleTabBarColor()
+        })
+        
     }
     
+    func toggleTabBarColor(){
+        self.makeDarkTabBar()
+    }
+    
+    func makeDarkTabBar(){
+        let darkTheme = TabBarControllerTheme.init(backgroundColor: .clear, tabBarBackgroundColor: .clear, tabBarSeparatorColor: .black, tabBarIconColor: .white, tabBarSelectedIconColor: .red, tabBarTextColor: .white, tabBarSelectedTextColor: .red, tabBarBadgeBackgroundColor: .clear, tabBarBadgeStrokeColor: .clear, tabBarBadgeTextColor: .clear, tabBarExtractedIconColor: .white, tabBarExtractedTextColor: .white)
+        (self.rootTabController as? TabBarControllerImpl)?.updateTheme(navigationBarPresentationData: NavigationBarPresentationData(presentationData: presentationData), theme: darkTheme)
+    }
+    func restoreTabBar(){
+        (self.rootTabController as? TabBarControllerImpl)?.updateTheme(navigationBarPresentationData: NavigationBarPresentationData(presentationData: presentationData), theme: TabBarControllerTheme(rootControllerTheme: presentationData.theme))
+   
+    }
     required public init(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
