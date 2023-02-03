@@ -1069,7 +1069,7 @@ public class GalleryController: ViewController, StandalonePresentableController,
         }
         
         override public func loadDisplayNode() {
-            let controllerInteraction = GalleryControllerInteraction(presentController: { [weak self] controller, arguments in
+          let controllerInteraction = GalleryControllerInteraction(presentController: { [weak self] controller, arguments in
                 if let strongSelf = self {
                     strongSelf.present(controller, in: .window(.root), with: arguments, blockInteraction: true)
                 }
@@ -1337,6 +1337,8 @@ public class GalleryController: ViewController, StandalonePresentableController,
                         }
                     }
                 }
+                
+
             }
             
             if !self.entries.isEmpty && !self.didSetReady {

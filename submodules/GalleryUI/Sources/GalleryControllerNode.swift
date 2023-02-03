@@ -62,9 +62,9 @@ open class GalleryControllerNode: ASDisplayNode, UIScrollViewDelegate, UIGesture
         
         super.init()
         
-        self.setViewBlock({
-            return UITracingLayerView()
-        })
+//        self.setViewBlock({
+//            return UITracingLayerView()
+//        })
         
         self.pager.toggleControlsVisibility = { [weak self] in
             if let strongSelf = self {

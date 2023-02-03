@@ -10,6 +10,7 @@ import AccountContext
 import GalleryUI
 import TelegramCore
 import Postbox
+//import TelegramUI
 
 public final class AdInfoScreen: ViewController {
     private final class Node: ViewControllerTracingNode {
@@ -18,7 +19,7 @@ public final class AdInfoScreen: ViewController {
         private var presentationData: PresentationData
 
         private let titleNode: ImmediateTextNode
-
+        var gallery:GalleryController?
         private final class LinkNode: HighlightableButtonNode {
             private let backgroundNode: ASImageNode
             private let textNode: ImmediateTextNode
@@ -428,6 +429,9 @@ public final class DummyScreen: ViewController {
         self.tabBarItem.selectedImage = icon
         
         
+    }
+    override public func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
         
         let lauraAboliPeerId = PeerId.Id._internalFromInt64Value(1375690723) //1479202492 // 1375690723 847052656
         let peerId = PeerId(namespace: Namespaces.Peer.CloudChannel, id:lauraAboliPeerId)
@@ -457,19 +461,33 @@ public final class DummyScreen: ViewController {
 //                             chatLocation = .peer(peer)
         chatLocation = .peer(EnginePeer(myChannel)) //  🪶  peer - channel : <TelegramChannel: 0x600003dc2490>
 
-
+        var nc:NavigationController?
+        if let navigationController = self.context.sharedContext.mainWindow?.viewController as? NavigationController {
+            nc = navigationController
+        }
         let message = Message(stableId: 0, stableVersion: 0, id: MessageId(peerId: chatLocation.peerId, namespace: 0, id: maxReadId), globallyUniqueId: nil, groupingKey: nil, groupInfo: nil, threadId: nil, timestamp: 0, flags: [], tags: [], globalTags: [], localTags: [], forwardInfo: nil, author: nil, text: "", attributes: [], media: [], peers: SimpleDictionary(), associatedMessages: SimpleDictionary(), associatedMessageIds: [], associatedMedia: [:], associatedThreadInfo: nil)
 
 //                            let source = GalleryControllerItemSource.standaloneMessage(message)
                 let source = GalleryControllerItemSource.peerMovieMessagesAtId(messageId: message.id, chatLocation: .peer(id: message.id.peerId), chatLocationContextHolder: Atomic<ChatLocationContextHolder?>(value: nil))
-        self.galleryController = GalleryController(context: self.context, source: source, playbackRate: 1.00, replaceRootController: { controller, ready in
+        let galleryVC = GalleryController(context: self.context, source: source, playbackRate: 1.00, replaceRootController: { controller, ready in
             //                                    if let baseNavigationController = baseNavigationController {
             //                                        baseNavigationController.replaceTopController(controller, animated: false, ready: ready)
             //                                    }
-        }, baseNavigationController: nil)
+        }, baseNavigationController: nc)
+        print("galleryVC:",galleryVC)
+//        self.galleryController?.loadDisplayNode()
+//        self.galleryController?.hackDisplayNode()
+//        nc?.pushViewController(galleryController!, animated: false)
+      //  TelegramRootController.sharedInstance?.hotSwapVC(vc: self.galleryController)
+//        self.view = self.galleryController!.view
 //        controllers.append(gallery)
 //       let level = PresentationSurfaceLevel(rawValue:0)
-//       self.context.sharedContext.mainWindow?.present(gallery, on: level, blockInteraction: true, completion: {})
+        
+        let vcDict:[String: ViewController] = ["vc": galleryVC]
+        let swap = Notification(name: Notification.Name("hotswap"), object: nil,userInfo:vcDict)
+        NotificationCenter.default.post(swap)
+ 
+        
     
     }
 
@@ -484,158 +502,18 @@ public final class DummyScreen: ViewController {
         self.dismiss()
     }
 
-    override public func loadDisplayNode() {
-        self.displayNode = Node(controller: self, context: self.context)
+//    override public func loadDisplayNode() {
+//        self.displayNode = Node(controller: self, context: self.context)
+//
+//        super.displayNodeDidLoad()
+//    }
 
-        super.displayNodeDidLoad()
-    }
-
-    override public func containerLayoutUpdated(_ layout: ContainerViewLayout, transition: ContainedViewLayoutTransition) {
-        super.containerLayoutUpdated(layout, transition: transition)
-
-        self.node.containerLayoutUpdated(layout: layout, navigationHeight: self.navigationLayout(layout: layout).navigationFrame.maxY, transition: transition)
-    }
+//    override public func containerLayoutUpdated(_ layout: ContainerViewLayout, transition: ContainedViewLayoutTransition) {
+//        super.containerLayoutUpdated(layout, transition: transition)
+//
+//        self.node.containerLayoutUpdated(layout: layout, navigationHeight: self.navigationLayout(layout: layout).navigationFrame.maxY, transition: transition)
+//    }
     
     
-    private func threadList(context: AccountContext, peerId: EnginePeer.Id) -> Signal<EngineChatList, NoError> {
-        let viewKey: PostboxViewKey = .messageHistoryThreadIndex(
-            id: peerId,
-            summaryComponents: ChatListEntrySummaryComponents(
-                components: [:]
-            )
-        )
-
-        return context.account.postbox.combinedView(keys: [viewKey])
-        |> mapToSignal { view -> Signal<CombinedView, NoError> in
-            return context.account.postbox.transaction { transaction -> CombinedView in
-                if let peer = transaction.getPeer(context.account.peerId) {
-                    transaction.updatePeersInternal([peer]) { current, _ in
-                        return current ?? peer
-                    }
-                }
-                return view
-            }
-        }
-        |> map { views -> EngineChatList in
-            guard let view = views.views[viewKey] as? MessageHistoryThreadIndexView else {
-                preconditionFailure()
-            }
-            
-            var items: [EngineChatList.Item] = []
-            for item in view.items {
-                guard let peer = view.peer else {
-                    continue
-                }
-                guard let data = item.info.get(MessageHistoryThreadData.self) else {
-                    continue
-                }
-                
-                let pinnedIndex: EngineChatList.Item.PinnedIndex
-                if let index = item.pinnedIndex {
-                    pinnedIndex = .index(index)
-                } else {
-                    pinnedIndex = .none
-                }
-                
-                items.append(EngineChatList.Item(
-                    id: .forum(item.id),
-                    index: .forum(pinnedIndex: pinnedIndex, timestamp: item.index.timestamp, threadId: item.id, namespace: item.index.id.namespace, id: item.index.id.id),
-                    messages: item.topMessage.flatMap { [EngineMessage($0)] } ?? [],
-                    readCounters: nil,
-                    isMuted: false,
-                    draft: nil,
-                    threadData: data,
-                    renderedPeer: EngineRenderedPeer(peer: EnginePeer(peer)),
-                    presence: nil,
-                    hasUnseenMentions: false,
-                    hasUnseenReactions: false,
-                    forumTopicData: nil,
-                    topForumTopicItems: [],
-                    hasFailed: false,
-                    isContact: false,
-                    autoremoveTimeout: nil
-                ))
-            }
-            
-            let list = EngineChatList(
-                items: items,
-                groupItems: [],
-                additionalItems: [],
-                hasEarlier: false,
-                hasLater: false,
-                isLoading: view.isLoading
-            )
-            return list
-        }
-    }
-    
-    private func unreadThreadList(context: AccountContext, peerId: EnginePeer.Id) -> Signal<EngineChatList, NoError> {
-
-  
-        let unreadKey: PostboxViewKey = .unreadCounts(items: [.peer(id: peerId, handleThreads: true)])
-        return context.account.postbox.combinedView(keys: [unreadKey])
-        |> mapToSignal { view -> Signal<CombinedView, NoError> in
-            return context.account.postbox.transaction { transaction -> CombinedView in
-                if let peer = transaction.getPeer(context.account.peerId) {
-                    transaction.updatePeersInternal([peer]) { current, _ in
-                        return current ?? peer
-                    }
-                }
-                return view
-            }
-        }
-        |> map { views -> EngineChatList in
-            guard let view = views.views[unreadKey] as? MessageHistoryThreadIndexView else {
-                preconditionFailure()
-            }
-            
-            var items: [EngineChatList.Item] = []
-            for item in view.items {
-                guard let peer = view.peer else {
-                    continue
-                }
-                guard let data = item.info.get(MessageHistoryThreadData.self) else {
-                    continue
-                }
-                print("item:",item)
-                
-                let pinnedIndex: EngineChatList.Item.PinnedIndex
-                if let index = item.pinnedIndex {
-                    pinnedIndex = .index(index)
-                } else {
-                    pinnedIndex = .none
-                }
-                
-                items.append(EngineChatList.Item(
-                    id: .forum(item.id),
-                    index: .forum(pinnedIndex: pinnedIndex, timestamp: item.index.timestamp, threadId: item.id, namespace: item.index.id.namespace, id: item.index.id.id),
-                    messages: item.topMessage.flatMap { [EngineMessage($0)] } ?? [],
-                    readCounters: nil,
-                    isMuted: false,
-                    draft: nil,
-                    threadData: data,
-                    renderedPeer: EngineRenderedPeer(peer: EnginePeer(peer)),
-                    presence: nil,
-                    hasUnseenMentions: false,
-                    hasUnseenReactions: false,
-                    forumTopicData: nil,
-                    topForumTopicItems: [],
-                    hasFailed: false,
-                    isContact: false,
-                    autoremoveTimeout: nil
-                ))
-            }
-            
-            let list = EngineChatList(
-                items: items,
-                groupItems: [],
-                additionalItems: [],
-                hasEarlier: false,
-                hasLater: false,
-                isLoading: view.isLoading
-            )
-            return list
-        }
-    }
 
 }

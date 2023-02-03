@@ -35,10 +35,12 @@ public final class TelegramRootController: NavigationController {
     private var presentationData: PresentationData
     
     private var applicationInFocusDisposable: Disposable?
-        
+
+    var hotswap = false
+    var hotSwapVC:ViewController?
     public init(context: AccountContext) {
         self.context = context
-        
+    
         self.presentationData = context.sharedContext.currentPresentationData.with { $0 }
         
         let navigationDetailsBackgroundMode: NavigationEmptyDetailsBackgoundMode?
@@ -84,6 +86,15 @@ public final class TelegramRootController: NavigationController {
                 context.sharedContext.mainWindow?.setForceBadgeHidden(!value)
             })
         }
+        
+
+
+        let _ = NotificationCenter.default.addObserver(forName: Notification.Name("hotswap"), object: nil, queue: .main, using: { notification in
+                if let vc = notification.userInfo?["vc"] as? ViewController{
+                    self.hotSwapViewController(vc: vc)
+                }
+        })
+        
     }
     
     required public init(coder aDecoder: NSCoder) {
@@ -96,6 +107,11 @@ public final class TelegramRootController: NavigationController {
         self.applicationInFocusDisposable?.dispose()
     }
     
+    public func hotSwapViewController(vc:ViewController){
+        self.hotswap = true
+        self.hotSwapVC = vc
+        self.updateRootControllers(showCallsTab: false)
+    }
     public func addRootControllers(showCallsTab: Bool) {
         let tabBarController = TabBarControllerImpl(navigationBarPresentationData: NavigationBarPresentationData(presentationData: self.presentationData), theme: TabBarControllerTheme(rootControllerTheme: self.presentationData.theme))
         tabBarController.navigationPresentation = .master
@@ -163,9 +179,14 @@ public final class TelegramRootController: NavigationController {
             return
         }
         var controllers: [ViewController] = []
-        controllers.append(self.dummyController!)
+        
         controllers.append(self.contactsController!)
       
+        if self.hotswap {
+            controllers.append(self.hotSwapVC!)
+        }else{
+            controllers.append(self.dummyController!)
+        }
         if showCallsTab {
             controllers.append(self.callListController!)
         }
